@@ -1,6 +1,6 @@
 ---
 title: "Class Reference"
-author: "Derek Willis"
+author: "Stella Canino"
 output:
   html_document:
     theme: cerulean
@@ -24,6 +24,8 @@ Consider this a personal guide to the commands and functions you will learn. In 
 The command to set a working directory is setwd(). For example, this sets the working directory to a directory called data_journalism_2024_fall inside a directory called jour472 located inside your home directory (the ~ is equivalent of /Users/[youruser] on a Mac).
 
 ```{r}
+###This connects my rstudio to the github account where all the documents and csv's needed for the course will be 
+
 rm(list=ls())
 setwd("/Users/Stella/Documents/Github/data_jour_2024_fall_SSCQ")
 ```
@@ -42,6 +44,21 @@ library(tidyverse)
 print("Hola mi amor.")
 ```
 
+###Reference Book Assignment August 30,2024
 
+### 1. This is the simple math function where we act like we're using a calculator. 
 
+(2*3) + 40
+
+### In this section you could attribute a name to a number which makes the variable act as if you are simplying putting the numbers. 
+
+firstnumber <- 3
+secondnumber <-4
+thirdnumber <- 17
+
+(thirdnumber/secondnumber) + firstnumber
+
+### This is the function to import data into Rstudio that will be used for analysis in code. Like this csv will have the data for projects like voter data or income brackets. Numerical stuff. This is not an actual file that's on my repo but more of an example of what the code is suppose to look like. 
+
+csv34 <- read.csv("fertility.csv")
 
