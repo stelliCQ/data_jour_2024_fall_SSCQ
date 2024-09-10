@@ -1,0 +1,149 @@
+---
+title: "lab_01"
+author: "Stella S. Canino"
+date: "2024-08-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Turn off scientific notation
+options(scipen=999)
+```
+
+## About this lab
+
+To complete this lab, you need to: \* run existing code as directed (look for **Task**). \* modify existing code as directed (look for **Task**). \* write code in empty codeblocks provided to answer questions included (look for **Q**). \* write out the answer in the form of a complete sentence in the space given (look for **A**). When you are finished, commit changes and push to your personal GitHub repo, then submit the URL to this document on ELMS.
+
+Remember to add any new verbs or concepts to your reference notebook!
+
+## Load libraries and establish settings
+
+**Task** Run the codeblock below to load the Tidyverse. To run the codeblock, hit the little green play button in the upper right corner of the gray area (the codeblock) below.
+
+```{r}
+# Load the tidyverse. If you have not installed the tidyverse already, remove the # from the next line and run it first.  
+# install.packages('tidyverse')
+library(tidyverse)
+```
+
+## Load Data
+
+We're going to load the slice of WinRed contribution data from West Virginia, which is in a file called `lab_01.rds`
+
+**Task** Using the example from the pre_lab, write code to load the RDS file and assign it to a good variable name.
+
+```{r}
+westvirgin_winred_contributes <- read_rds("lab_01.rds")
+
+```
+
+## Examine Data
+
+**Task** Run the codeblock below to use glimpse to get a sense of the column names, types and sample data.
+
+**Q1** How many rows and columns does this dataframe have?
+
+**A1**
+
+###This dataframe has 24 columns and 40,441 rows.
+
+```{r}
+glimpse(westvirgin_winred_contributes)
+
+```
+
+## Answer questions
+
+**Q2** Which West Virginia city provided the largest number of contributions? How many?
+
+**A2**
+
+###The West Virginia city that provided the largest number of contributions is Charleston by 3,226.
+
+```{r}
+westvirgin_winred_contributes |>
+ group_by(city) |>
+ summarise(
+    count_contribs = n()
+  ) |>
+  arrange(desc(count_contribs))
+
+```
+
+**Q3** Which West Virginia cities accounted for the fewest contributions? How many of them, roughly speaking?
+
+###Roughly 60 cities were tied for the fewest number of contributions by one. 
+##These are cities like Allen Junction, Bristol, Nebo for example. 
+
+**A3**
+
+
+
+```{r}
+westvirgin_winred_contributes |>
+ group_by(city) |>
+ summarise(
+    count_contribs = n()
+  ) |>
+  arrange(count_contribs)
+
+```
+
+**Q4** What's your best educated guess to explain why the city identified in question 2 had more contributions compared to the cities identified in question 3? Hint: you won't find the answer in the data, you'll need to do some quick web research. You do not need to write any code for this question, so no codeblock is provided.
+
+**A4**
+
+### Charleston has the largest population in the state, and the other cities identified in Q3 with very small rural populations.
+Another reason is that capital cities is where most of the economic activity and wealth is centered in. 
+
+**Q5** What recipient got the largest total amount of money? How many contributions did they receive and what was the average donation?
+
+**A5**
+
+###The recipient with the most amount of money is Trump National Committee JFC, INC with 463944.40 and 14063 contributions.
+### It has a mean of 32.99. 
+
+```{r}
+westvirgin_winred_contributes |>
+ group_by(memo_text) |>
+ summarise(
+    count_contribs = n(),
+    total_amount = sum(amount),
+    mean_amount = mean(amount), 
+  ) |>
+  arrange(desc(total_amount))
+
+```
+
+**Q6** What is that top recipient and what explains its popularity? Hint: this will require web research, you won't be able to answer this purely from the data set. You do not need to write any code for this question, so no codeblock is provided.
+
+**A6**
+
+### TRUMP NATIONAL COMMITTEE JFC, INC is the joint #fundraising committee for Trump's bid for the 2024 election and for the Republican National Committee. It's the main mechanism where Trump and the RNC are fundraising for their election cicle bids. 
+
+**Q7**. Using the answer from A5 as a starting point, produce a summary table that has the following information for each recipient: \* count of contributions \* total amount of all contributions \* the average contribution amount \* the median contribution amount \* the smallest contribution amount \* the largest contribution amount
+
+Store it as a variable object called `wv_summary` so that you can examine it with the data viewer. What newsworthy nuggets jump out at you that you could imagine dropping into a news story? Write a few summary sentences with overall findings.
+
+**A7**
+
+## In wv_summary I organized the data into how many people and how much are West Virginians contributing to Republican election committees. Overall the committees focused on federal-level positions like the presidency and Congress had the highest total amount of donations.There was a wide range of median amount donated depending if the committee was for federal-elected positions in the state or from other states like Texas. The largest maximum amount donated in the summary was $10,000 and the minimum amount was 0.01 cents. It's interesting to point out that "Refund of Earmarked Contribution" had the second largest total amount of the data. I would write a story on why there is such a large number of refunds for contributions, which committees did they ask for refunds and whether that money has been reimbursed to those who contributors. I think the fact that there is so much money that's being reimbursed is very interesting. 
+ 
+
+```{r}
+wv_summary <- westvirgin_winred_contributes |>
+ group_by(memo_text) |>
+ summarise(
+    count_contribs = n(),
+    total_amount = sum(amount),
+    mean_amount = mean(amount),
+    median_amount = median(amount),
+    mininum_amount = min(amount),
+    max_amount = max(amount)
+  ) |>
+  arrange(desc(total_amount))
+
+```
+
+
