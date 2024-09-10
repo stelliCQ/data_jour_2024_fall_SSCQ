@@ -89,6 +89,7 @@ library(tidyverse)
 
 ```{r}
 maryland_winred_contributions <- read_rds("pre_lab_01.rds")
+
 ```
 
 Once it loads, look at the environment window at right in RStudio for maryland_winred_contributions. It's next to a small blue circle with a white arrow in it. To the right of that, look at how many "obs" the dataset has ("obs" is short for observation, which is another way of saying rows or records). Look at how many variables it has (another way of saying columns or fields). Write the number of observations and variables below.
