@@ -1,0 +1,185 @@
+---
+title: "lab_02"
+author: "Stella S. Canino"
+date: "2024-08-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libraries and establish settings
+
+```{r}
+# Turn off scientific notation
+options(scipen=999)
+
+# Load the tidyverse. If you have not installed the tidyverse already, remove the # from the next line and run it first.  
+# install.packages('tidyverse')
+library(tidyverse)
+library(lubridate)
+```
+
+## Load Data
+
+For this lab we'll be working with a slice of Maryland voter registration data: records of people who have registration dates this year through Aug. 7. Let's load it.
+
+```{r}
+md_voters_2024 <- read_rds("data/lab_02.rds")
+```
+
+## Examine Data
+
+Take a look at the data, getting familiar with what it contains. Most of the columns should be self-explanatory, but there are two date columns: STATE_REGISTRATION_DATE and COUNTY_REGISTRATION_DATE. The former represents the date the person registered as a Maryland voter; the latter is when they registered in their current county. They may be the same, but if a voter moves from one county to another they will differ. This is important because if the two dates are the same, that's a pretty good indication that this is a *new* voter, someone who has no history of registering in Maryland. You'll need to keep that definition in mind.
+
+## Answer questions
+
+**Q1** How many voters appear to be *new* registrants since July 21, when President Joe Biden announced he would leave the race, based on the information above? Create a dataframe to hold the only those voters. Which counties have seen the most? Take a look at county population figures here and compare the two in your answer: https://worldpopulationreview.com/us-counties/maryland.
+
+**A1**
+
+There are 17,083 new registered voters in Maryland after Biden dropped from the race. Of those registered voters, the counties that have the largest amount of new voters are Montgomery County, Baltimore City, Baltimore County and PG County. This makes sense since these are the most highly populated counties in the state. 
+
+
+###You should filter with County_Registration since they give us more numbers, and county 
+registration date has a higher date. 
+
+registered_after_biden_drop <- voters_new |> filter(COUNTY_REGISTRATION_DATE) > ymd("2024-07-21")
+
+```{r}
+
+voters_new <- md_voters_2024 |>
+  select(COUNTY, FIRSTNAME, LASTNAME, COUNTY_REGISTRATION_DATE, STATE_REGISTRATION_DATE) 
+
+###It gave me 110436. HEY CORRECT ANSWER.
+
+registered_after_biden_drop <- voters_new |> filter(STATE_REGISTRATION_DATE > ymd("2024-07-21"))
+
+registered_after_biden_drop |> 
+  group_by(COUNTY) |>
+  summarise(new_md_voters = n ())  |> 
+arrange(desc(new_md_voters))
+
+
+#STEP 1: SEE HOW MANY ARE NEW REGISTERED VOTERS.
+#STEP 2: SEE HOW MANY REGISTERED AFTER OR THE SAME DAY OF JULY 21
+#STEP 3: WHAT COUNTY HAD SEEN THE MOST REGISTRATIONS AFTER THAT DATA.
+
+
+
+```
+
+**Q2** A better question is whether the new voters you found in Q1 are an outlier compared to other weeks this year. Using the original dataframe with 2024 registrants, use `mutate()` and lubridate to produce week numbers from the COUNTY_REGISTRATION_DATE (Lubridate has a function that turns a date into a week number. Use that to answer this question). Save that to the original dataframe. Then calculate how many voters are in each week. 
+
+Describe the distribution of voters groups in a sentence - are the weeks from July 21-August 7 different from the rest, and if so, how?
+
+**A2**
+
+The weeks from July 21-August 7 are different from the rest because they have the highest amount of new registered voters that's seen in the data. 
+
+###
+
+```{r}
+
+md_voters_2024 |> mutate(WEEK = floor_date(COUNTY_REGISTRATION_DATE, "week")) |>
+  group_by(WEEK) |>
+  summarise(md_voters_2024_byweek = n()) |>
+  arrange(desc(md_voters_2024_byweek))
+
+
+
+```
+
+**Q3** Using lubridate, show which month saw the largest number of registrations. Does the answer help shed more light on Q2?
+**A3** 
+
+##Yes,it helps us understand and confirm that the month that had the most voter registration was July (when Biden Dropped from the race), and gives us a total of how many registered that month. It gives us a more general answer and then the weekly code helps us prove that this increment was following Biden's announcement and not for some other reason. 
+
+```{r}
+
+md_voters_2024 |> mutate(MONTH = floor_date(COUNTY_REGISTRATION_DATE, "month")) |>
+  group_by(MONTH) |>
+  summarise(md_voters_2024_bymonth = n()) |>
+  arrange(desc(md_voters_2024_bymonth))
+
+
+```
+
+**Q4** Maryland has, officially, five regions: https://www.visitmaryland.org/article/maryland-regions. Modify the original dataframe again to add a `region` column based on the `COUNTY` value using case_when. Are you going to have to do this for every Maryland county plus Baltimore City? Yes, you are. Which regions and parties account for the most new voters?
+
+**A4** 
+
+The regions with the largest amount of new voters and their parties are Capital Region with Democrats and Central Region with Democrats. 
+
+```{r}
+
+  md_voters_2024 |>
+  mutate(
+    REGION = case_when(
+      COUNTY == "Garrett County" ~ "Western Region",
+      COUNTY == "Allegany County" ~ "Western Region",
+      COUNTY == "Washington County" ~ "Western Region",
+      COUNTY == "Frederick County" ~ "Capital Region",
+      COUNTY == "Montgomery County" ~ "Capital Region",
+      COUNTY == "Prince George's County" ~ "Capital Region",
+      COUNTY == "Anne Arundel County" ~ "Central Region",
+      COUNTY == "Baltimore City" ~ "Central Region",
+      COUNTY == "Baltimore County" ~ "Central Region",
+      COUNTY == "Carroll County" ~ "Central Region",
+      COUNTY == "Harford County" ~ "Central Region",
+      COUNTY == "Howard County" ~ "Central Region",
+      COUNTY == "Calvert County" ~ "Southern Region",
+      COUNTY == "Charles County" ~ "Southern Region",
+      COUNTY == "St. Mary's County" ~ "Southern Region",
+      COUNTY == "Kent County" ~ "Eastern Shore Region",
+      COUNTY == "Queen Anne's County" ~ "Eastern Shore Region",
+      COUNTY == "Talbot County" ~ "Eastern Shore Region",
+      COUNTY == "Caroline County" ~ "Eastern Shore Region",
+      COUNTY == "Dorchester County" ~ "Eastern Shore Region",
+      COUNTY == "Wicomico County" ~ "Eastern Shore Region",
+      COUNTY == "Somerset County" ~ "Eastern Shore Region",
+      COUNTY == "Worcester County" ~ "Eastern Shore Region",
+      COUNTY == "Cecil County" ~ "Eastern Shore Region",
+      COUNTY == "Garrett" ~ "Western Region",
+      COUNTY == "Allegany" ~ "Western Region",
+      COUNTY == "Washington" ~ "Western Region",
+      COUNTY == "Frederick" ~ "Capital Region",
+      COUNTY == "Montgomery" ~ "Capital Region",
+      COUNTY == "Prince George's" ~ "Capital Region",
+      COUNTY == "Anne Arundel" ~ "Central Region",
+      COUNTY == "Baltimore City" ~ "Central Region",
+      COUNTY == "Baltimore" ~ "Central Region",
+      COUNTY == "Carroll" ~ "Central Region",
+      COUNTY == "Harford" ~ "Central Region",
+      COUNTY == "Howard" ~ "Central Region",
+      COUNTY == "Calvert" ~ "Southern Region",
+      COUNTY == "Charles" ~ "Southern Region",
+      COUNTY == "St. Mary's" ~ "Southern Region",
+      COUNTY == "Kent" ~ "Eastern Shore Region",
+      COUNTY == "Queen Anne's" ~ "Eastern Shore Region",
+      COUNTY == "Talbot" ~ "Eastern Shore Region",
+      COUNTY == "Caroline" ~ "Eastern Shore Region",
+      COUNTY == "Dorchester" ~ "Eastern Shore Region",
+      COUNTY == "Wicomico" ~ "Eastern Shore Region",
+      COUNTY == "Somerset" ~ "Eastern Shore Region",
+      COUNTY == "Worcester" ~ "Eastern Shore Region",
+      COUNTY == "Cecil" ~ "Eastern Shore Region"
+    )
+  ) |>
+  group_by(REGION, PARTY) |>
+  summarise(new_voters = n()) |>
+  arrange(desc(new_voters))
+
+
+
+```
+
+```
+
+**Q5** What's an additional question you could ask of this data?
+
+
+**A5** 
+
+I would ask how many new voters registered as unaffiliated and why did people choose to register as unaffiliated? 

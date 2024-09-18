@@ -79,7 +79,6 @@ westvirgin_winred_contributes |>
 **A3**
 
 
-
 ```{r}
 westvirgin_winred_contributes |>
  group_by(city) |>
@@ -94,8 +93,7 @@ westvirgin_winred_contributes |>
 
 **A4**
 
-### Charleston has the largest population in the state, and the other cities identified in Q3 with very small rural populations.
-Another reason is that capital cities is where most of the economic activity and wealth is centered in. 
+### Charleston has the largest population in the state, and the other cities identified in Q3 with very small rural populations. Another reason is that capital cities is where most of the economic activity and wealth is centered in. 
 
 **Q5** What recipient got the largest total amount of money? How many contributions did they receive and what was the average donation?
 
@@ -130,6 +128,7 @@ Store it as a variable object called `wv_summary` so that you can examine it wit
 
 ## In wv_summary I organized the data into how many people and how much are West Virginians contributing to Republican election committees. Overall the committees focused on federal-level positions like the presidency and Congress had the highest total amount of donations.There was a wide range of median amount donated depending if the committee was for federal-elected positions in the state or from other states like Texas. The largest maximum amount donated in the summary was $10,000 and the minimum amount was 0.01 cents. It's interesting to point out that "Refund of Earmarked Contribution" had the second largest total amount of the data. I would write a story on why there is such a large number of refunds for contributions, which committees did they ask for refunds and whether that money has been reimbursed to those who contributors. I think the fact that there is so much money that's being reimbursed is very interesting. 
  
+ ##WRONG
 
 ```{r}
 wv_summary <- westvirgin_winred_contributes |>
@@ -145,5 +144,33 @@ wv_summary <- westvirgin_winred_contributes |>
   arrange(desc(total_amount))
 
 ```
+
+wv1_summary <- westvirgin_winred_contributes |>
+group_by(state) |>
+summarise (
+count_contribs = n(),
+    total_amount = sum(amount),
+    mean_amount = mean(amount),
+    median_amount = median(amount),
+    mininum_amount = min(amount),
+    max_amount = max(amount)
+)  |>
+arrange(desc(total_amount))
+   
+   #####THIS IS HOW U FILTER THIS OUT
+   
+   
+ westvirgin_winred_contributes |>
+ filter(memo_text != 'Refund of Earmarked Contribution') |>
+ group_by(memo_text) |>
+ summarise(
+    count_contribs = n(),
+    total_amount = sum(amount),
+    mean_amount = mean(amount),
+    median_amount = median(amount),
+    mininum_amount = min(amount),
+    max_amount = max(amount)
+  ) |>
+  arrange(desc(total_amount))
 
 

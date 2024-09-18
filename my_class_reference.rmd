@@ -62,3 +62,213 @@ thirdnumber <- 17
 
 csv34 <- read.csv("fertility.csv")
 
+REFERENCE NOTEBOOK Ch.2 
+
+###head() --> Shows the first 6 rows of the dataset.
+###summary() --> Provides statistical summary of each column in dataset. For numerical columns, it shows the minimum, maximum, mean, and median values. For categorical columns, it shows a summary of the distinct categories and their counts. 
+####colnames() --> List the names of the columns in the dataset.
+Helps you quickly identify the labels for each variable in your data. 
+###glimpse()---> Offers a transposed view of teh data, showing the column names along with a preview of their content and data types. 
+### arrange() --> Used to reorder the rows of a dataset based on the values of one or more columns. 
+
+###Lubridate provides tools that make it easier to parse and manipulate dates. 
+###Provides dunctions that us letters "m", "d" and "y". 
+###Mutate is calculate new metrics in a new field using existing fields of data. 
+
+*In mutate you need to first create a name for this new column and then use the math for it. 
+
+MUTATE CODE EXAMPLE
+
+primary_24 |>
+  select(office_name, office_district, candidate_name, party, county_name, election_day, votes) |>
+  mutate(
+  percent_election_day = (election_day/votes)*100
+)  |> 
+  arrange(desc(percent_election_day))
+
+--> This first selects the columns we will be using for the dataset.
+--> Then it mutates a new column called _percent_election_day, which is done by dividing election_day votes by votes then multiplying by 100. 
+--> Then it arranges the rows in descending order, with the highest appearing first. 
+
+##Mutate can also be used for standarizing data like different spellings of cities into a single one. 
+
+the mutate() function in R to create a new column that assigns a category value based on a numerical amount in each record (row).
+
+A function called `str_to_upper` that will convert a character column into all uppercase. Now we can say exactly how many donations came from Baltimore (I mean, of course, BALTIMORE).
+
+###Mutate can make that happen by creating a new column and putting in a category value *based on the amount* of each record.
+In simpler terms:
+
+You can use mutate() to add a new column to your dataset.
+This new column can contain categorical labels (like "low", "medium", "high") based on the values in another column.
+
+We can use `case_when` to give our new category column a value using some standard numeric logic.
+
+The mutate statement first adds a new column that categorizes the amount. Each category mutates to less than, greater than or equal to, or greater than to the amount we want It's just setting category for the dollar range of the contributions. 
+
+maryland_winred_categories <- maryland_winred_contributions |>
+  mutate(
+    amount_category = case_when(
+        amount < 100 ~ "Less than $100",
+        amount >= 100 & amount < 500 ~ "Between $100 and $499",
+        amount >= 500 & amount < 1500 ~ "Between $500 and $1499",
+        amount >= 1500 & amount < 3000 ~ "Between $500 and $2999",
+        amount >= 3000 ~ "$3,000 or more"
+      )
+  )
+head(maryland_winred_categories
+
+**Filtering creates a subset of the data based on criteria**. All records where the amount is greater than 150,000. All records that match "College Park". Something like that. **Filtering works with rows -- when we filter, we get fewer rows back than we start with.**
+
+** = is not == and = is not “equal to”. = is an assignment operator in most languages – how things get named.**
+
+__ This is filtering
+
+prince_georges <- primary_24 |> filter(county_name == "Prince George's County")
+
+head(prince_georges)
+
+--This is selecting
+
+selected_prince_georges <- prince_georges |> select(office_name, office_district, candidate_name, party, votes)
+
+head(selected_prince_georges)
+
+*In this case, AND is `&` and OR is `|`. you can use & instead of pike. OR is additive; AND is restrictive.
+
+**Class 3 Cleaning data **
+r}
+texas_precinct_20 <- texas_precinct_20 |>
+  mutate(election_day = case_when(
+    election_day == '5+' ~ '49',
+    .default = election_day
+  ))
+
+texas_precinct_20 <- texas_precinct_20 |> mutate(election_day = as.numeric(election_day))
+
+glimpse(texas_precinct_20)
+
+*Other thing*
+
+ cleaning function
+cleaned_conowingo <- conowingo |>
+  clean_names()
+
+# display the cleaned dataset
+cleaned_conowingo
+
+
+
+The code you provided performs the following steps:
+
+Fix the "election_day" value: It checks if any values in the election_day column are equal to '5+' and changes them to '49'. The .default = election_day part ensures that all other values in the election_day column remain unchanged.
+
+Change the data type: The second mutate() function converts the election_day column from character (chr) to numeric by using as.numeric().
+
+Display the structure of the data: The glimpse() function provides a quick look at the structure of the dataset, showing you the column names, types, and a sample of the data.
+
+Once you run this, you'll see that the "election_day" column has been updated, and its data type has changed to numeric, as required.
+
+This approach is useful when you need to handle errors or anomalies in the dataset while ensuring the data is consistent for analysis.
+
+The clean_names() function from the janitor package converts column names to a standardized format. This transformation typically involves:
+
+Converting all characters to lowercase.
+Replacing spaces or special characters with underscores.
+Adding an "x" before column names that start with a number, since R does not allow variable names to begin with digits.
+For the column "1_linenumber", it is renamed to "x1_linenumber". This ensures that the name follows R’s naming conventions for variables.
+
+The code block ensures that all column names follow a consistent and predictable pattern, making them easier to work with in data analysis.
+
+*Change names of columns*
+
+cleaned_conowingo <- conowingo |>
+  clean_names() |> 
+  rename(linenumber = x1_linenumber)
+
+# display the cleaned dataset
+cleaned_conowingo
+ChatGPT said:
+
+ChatGPT
+Memory updated
+The code uses the clean_names() function from the janitor package to standardize the column names by making them lowercase and replacing any non-alphanumeric characters with underscores. After that, it renames the column "x1_linenumber" to "linenumber" for better readability and easier referencing in future analysis.
+
+This approach ensures that the dataset has clean, consistent, and intuitive column names, making it easier to work with. The transformation avoids any potential issues with columns starting with numbers, and the final dataset (cleaned_conowingo) is more user-friendly.
+
+*Check for duplicates* 
+
+
+
+*Clean the Zip code*
+ cleaning function
+cleaned_conowingo <- conowingo |>
+  clean_names() |> 
+  rename(linenumber = x1_linenumber) |> 
+  mutate(amount = as.numeric(amount)) |> 
+  distinct()
+  
+
+# display the cleaned dataset
+cleaned_conowingo
+
+ChatGPT
+
+The distinct() function in this code removes any duplicate rows from the dataset, ensuring that each row is unique based on the combination of values in all columns. After applying this function, the new dataframe has 13 rows.
+
+In summary, the code standardizes column names, renames a column, converts the amount column to numeric, and removes duplicate rows. This makes the dataset clean and consistent for analysis.
+
+*Clean misspellings*
+
+ cleaning function
+cleaned_conowingo <- conowingo |>
+  clean_names() |> 
+  rename(linenumber = x1_linenumber) |> 
+  mutate(amount = as.numeric(amount)) |> 
+  distinct() |>
+  mutate(zip = str_sub(zip, start=1L, end=5L)) |>
+  mutate(city = str_to_title(city))
+  
+
+# display the cleaned dataset
+cleaned_conowingo
+ChatGPT said:
+
+ChatGPT
+Memory updated
+After running the code, there are two misspellings of "Conowingo" left.
+
+The str_to_title() function capitalizes each word's first letter in the "city" field, standardizing entries like "conowingo" or "CONOWINGO" to "Conowingo." However, this function does not correct spelling errors, which is why two misspellings remain.
+
+This code helps ensure consistent formatting in the dataset but may still require manual corrections for spelling errors.
+
+*Clan mispellings PT. 3*
+
+ cleaning function
+cleaned_conowingo <- conowingo |>
+  clean_names() |> 
+  rename(linenumber = x1_linenumber) |> 
+  mutate(amount = as.numeric(amount)) |> 
+  distinct() |>
+  mutate(zip = str_sub(zip, start=1L, end=5L)) |>
+  mutate(city = str_to_title(city)) |>
+  mutate(city = case_when(
+    str_detect(city,"^Conowing") ~ "Conowingo",
+    TRUE ~ city
+  ))
+  
+This R code snippet cleans a dataset named conowingo and standardizes the "city" field, specifically correcting misspellings of "Conowingo." Here’s a step-by-step explanation:
+
+1. clean_names(): This function from the janitor package converts column names to a consistent, snake_case format. This makes it easier to work with the dataset.
+
+2. rename(linenumber = x1_linenumber): This renames the column x1_linenumber to linenumber for clarity and simplicity.
+mutate(amount = as.numeric(amount)): This converts the amount column to numeric format, ensuring that any data manipulation or calculations with this column are accurate.
+3. distinct(): This function removes any duplicate rows from the dataset, ensuring that each row is unique.
+mutate(zip = str_sub(zip, start=1L, end=5L)): This truncates the zip code to the first 5 characters, standardizing the zip code format.
+4. mutate(city = str_to_title(city)): This standardizes the capitalization in the city field by converting it to title case (e.g., "conowingo" becomes "Conowingo").
+5. mutate(city = case_when(...): This uses the case_when() function to correct misspellings of "Conowingo" in the city field:
+str_detect(city,"^Conowing") ~ "Conowingo": This condition checks if the city field starts with "Conowing" and replaces it with "Conowingo".
+6. TRUE ~ city: This ensures that any city names not matching the previous condition remain unchanged.
+cleaned_conowingo: This line displays the cleaned dataset.
+
+
