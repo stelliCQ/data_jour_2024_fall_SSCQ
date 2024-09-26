@@ -102,7 +102,7 @@ md_sen_new |>
 **Q2.** Let's do some research on the top purposes from A1. Feel free to search the Web to understand those terms better if need be, and then write a description comparing and contrasting the two campaigns' largest categories of spending.
 
 **A2.**
-Both campaigns share that their top two largest expense is Media Advertising and paying their staff. Alsobrooks has paid two million more for media advertising than Hogan, which is interesting. In contrast, the Alsobrooks spent less in fundraising consulting than Hogan, which was his third largest expense. Another thing is that Alsobrooks spent more money on digital consulting than Hogan, but he spent more money on strategy consulting than she did.
+Both campaigns share that their  largest expense is Media Advertising. Alsobrooks has paid two million more for media advertising than Hogan, which is interesting. In contrast, the Alsobrooks spent less in fundraising consulting than Hogan, which was his third largest expense. Another thing is that Alsobrooks spent more money on digital consulting than Hogan, but he spent more money on strategy consulting than she did.
 
 ```{r}
 #Hogan's money spending $$$
@@ -174,7 +174,7 @@ For Alsobrooks campaign, the committee with the largest payroll is Gustos for 43
 
 ```{r}
 md_sen_new |> 
-  filter(purpose_clean=="Salary") |>
+  filter(purpose_clean=="SALARY") |>
   filter(candidate =="Hogan") |>
   group_by(organization_name) |>
   summarise(
