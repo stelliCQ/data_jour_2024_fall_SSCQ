@@ -1,0 +1,153 @@
+---
+title: "Reverse Engineering"
+author: "Stella S. Canino, Wade DeVinney, and Miles Grovic"
+date: "2024-09-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+# Turn off scientific notation
+options(scipen=999)
+
+library(tidyverse)
+library(janitor)
+library(lubridate)
+
+```
+
+
+```{r}
+#This is the CSV File that we downloaded.
+
+us_rep_expense <- read_csv("/Users/stella/Desktop/rev_engineer/APRIL-JUNE-2024-SOD-DETAIL-GRID-FINAL.csv")
+
+
+```
+
+
+```{r}
+# We used glimpse, colnames, and summary to inspect the csv file.
+
+glimpse(us_rep_expense)
+colnames(us_rep_expense)
+summary(us_rep_expense)
+
+```
+
+
+```{r}
+
+##We made this code to filter for the main representatives presented in the story, and see their total amount of expenses. 
+
+# We understand that to show all representatives and senators we need to filter. We want to know
+#if there's a way where we don't go person to person filtering, which would take us forever. 
+#What could be a possibility to take out the committees and offices unrelated to specific congressmen quickly?
+
+us_rep_expense |>
+  filter(ORGANIZATION == "2024 HON. MATT GAETZ" | ORGANIZATION == "2024 HON. JACK BERGMAN" 
+  | ORGANIZATION == "2024 HON. NANCY MACE") |>
+  group_by(ORGANIZATION) |>
+  summarise(TOTAL_AMOUNT = sum(AMOUNT)) |>
+  arrange(desc(TOTAL_AMOUNT))
+
+```
+
+
+```{r}
+##This was our way to find out what organization/congresspeople had the largest amount.
+##However, it shows that 2024 HON. SHRI THANEDAR of Michina was the top congressmen spender.
+##We assume that maybe this is a newly updated csv file. 
+
+us_rep_expense |> 
+  group_by(ORGANIZATION) |>
+  summarise(TOTAL_AMOUNT = sum(AMOUNT)) |>
+  arrange(desc(TOTAL_AMOUNT))
+
+
+```
+
+
+
+```{r}
+### In the article, Jack Bergman of Michigan was the top spender. We filtered to see if we can match the amount that was said to be reimbursed in food and lodgings. However, lodgings was
+# 29,066.44 and not 32,000. Are big issue is that for meals its $12,000 in the article.
+#Our current code is missing most of that money. 
+#Should we use OPEN REFINE? 
+
+
+us_rep_expense |>
+  filter(ORGANIZATION == "2024 HON. JACK BERGMAN") |>
+  group_by(ORGANIZATION, DESCRIPTION) |>
+  summarise(TOTAL_AMOUNT = sum(AMOUNT)) |>
+  arrange(desc(TOTAL_AMOUNT))
+
+#Lodgings  29066.44	
+#MEALS	2,766.37	
+#2024 HON. JACK BERGMAN	FOOD & BEVERAGE	955.43	
+#2024 HON. JACK BERGMAN	WATER	317.24
+
+##something of lodging that they're considering and we can't find.
+```
+
+```{r}
+#We added both the 2023 and 2024 organization for Jack Bergman to see if we are closer. 
+#It still showed us the same amount of food related items. 
+
+us_rep_expense |> 
+  filter(ORGANIZATION  == "2024 HON. JACK BERGMAN" | 
+           ORGANIZATION == "2023 HON. JACK BERGMAN") |>
+  group_by(ORGANIZATION, DESCRIPTION) |>
+  summarise(TOTAL_AMOUNT = sum(AMOUNT)) |>
+  arrange(desc(TOTAL_AMOUNT))
+          
+#2766.37 Meals
+##955.43	Food bevrage
+##317.24 water
+```
+
+
+```{r}
+##From filtering this we can confirm that Matt Gaetz spent $32,751 for Lodging, if we add travel totals to lodgings.
+## However for meals we got $4,726 by adding the things below, and not the 12,000 in the WaPo article.
+
+us_rep_expense |>
+  filter(ORGANIZATION == "2024 HON. MATT GAETZ" | 
+           ORGANIZATION == "2023 HON. JACK BERGMAN") |>
+  group_by(ORGANIZATION, DESCRIPTION) |>
+  summarise(TOTAL_AMOUNT = sum(AMOUNT)) |>
+  arrange(desc(TOTAL_AMOUNT))
+
+##Travel Totals #22,922.53	 --> matt
+## Lodging 9829.90 --> matt
+##2674.18	meals --> matt
+##333.62 water --> matt
+##1719.32	food and bevarage --> matt
+```
+
+
+Concluding Note: 
+
+###In this first part of the assignment, we tried to figure copy the results of paragraph one
+that was about Rep. Jack Bergman (R-Mich.) being the program's top spender, and that he was 
+reimbursed more than $32,000 for lodging and nearly $12,000 for meals in 2023.
+
+##We were close in lodgings for Bergman, but not for meals.
+
+### We also tried to reverse engineer that Rep. Matt Gaetz (R-Fla.) was the program’s second-highest overall 
+spender with over $30,000 in lodging expenses and more than $11,000 for meals in 2023.
+
+##We were able to confirm the over 30,000 expense on food but not for meals. 
+
+
+
+
+
+
+
+
