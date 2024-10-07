@@ -73,13 +73,11 @@ us_rep_expense |>
 ```
 
 
-
 ```{r}
 ### In the article, Jack Bergman of Michigan was the top spender. We filtered to see if we can match the amount that was said to be reimbursed in food and lodgings. However, lodgings was
 # 29,066.44 and not 32,000. Are big issue is that for meals its $12,000 in the article.
 #Our current code is missing most of that money. 
 #Should we use OPEN REFINE? 
-
 
 us_rep_expense |>
   filter(ORGANIZATION == "2024 HON. JACK BERGMAN") |>
@@ -142,7 +140,7 @@ reimbursed more than $32,000 for lodging and nearly $12,000 for meals in 2023.
 ### We also tried to reverse engineer that Rep. Matt Gaetz (R-Fla.) was the program’s second-highest overall 
 spender with over $30,000 in lodging expenses and more than $11,000 for meals in 2023.
 
-##We were able to confirm the over 30,000 expense on food but not for meals. 
+##We were able to confirm the over 30,000 expense on lodgings but not for meals. 
 
 
 
