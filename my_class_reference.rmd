@@ -271,4 +271,13 @@ str_detect(city,"^Conowing") ~ "Conowingo": This condition checks if the city fi
 6. TRUE ~ city: This ensures that any city names not matching the previous condition remain unchanged.
 cleaned_conowingo: This line displays the cleaned dataset.
 
+PRE_LAB 5
+
+county_voters_combined <- bind_rows(list(county_voters_2016, county_voters_2018, county_voters_2020, county_voters_2022, county_voters_2024))
+View(county_voters_combined)
+
+*This code unites 4 different cvs files with the same column structure into one dataset in the global environment.*
+
+
+
 

@@ -1,0 +1,187 @@
+---
+title: "lab_05"
+author: "Stella S. Canino"
+date: "2024-09-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libraries and establish settings
+
+```{r}
+# load the tidyverse
+library(tidyverse)
+
+```
+
+## Getting Started
+
+This week we'll be combining and joining data to make it more useful and to ask some questions about it. This week, we'll revisit our new Maryland voters data and try to join it with contributions to the Harris campaign from Maryland donors made via ActBlue. Can we find new voters who are not registered Democrats who gave to Harris after she became a presidential candidate on July 21? What, if anything, can we say about those people?
+
+We'll be doing something similar to what Ence Morse did for [this Washington Post story](https://www.washingtonpost.com/politics/2024/09/24/kamala-harris-younger-donors/?pwapi_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyZWFzb24iOiJnaWZ0IiwibmJmIjoxNzI3MzIzMjAwLCJpc3MiOiJzdWJzY3JpcHRpb25zIiwiZXhwIjoxNzI4NzA1NTk5LCJpYXQiOjE3MjczMjMyMDAsImp0aSI6ImIwYWMxNTk4LWMwMDgtNDE5Ny04MjAyLWVmMWNjZWFmYWZiMiIsInVybCI6Imh0dHBzOi8vd3d3Lndhc2hpbmd0b25wb3N0LmNvbS9wb2xpdGljcy8yMDI0LzA5LzI0L2thbWFsYS1oYXJyaXMteW91bmdlci1kb25vcnMvIn0.3-s0tBkMV7Y9DD21CBsKMlaliGlOKT2egCO-UFT735Y), just on a smaller scale.
+
+First, load two CSV contribution files in the `data` folder, one each for donations made in July and August, and then combine them into a single dataframe.
+
+```{r}
+# load the Harris contribution data files and combine them
+
+harris_august <- read_csv("data/august_harris.csv")
+harris_july <- read_csv("data/july_harris.csv")
+
+```
+
+Next, let's read in the new voters (people who registered in 2024):
+
+```{r}
+# load the new voters data
+
+new_voters <- read_csv("data/new_voters.csv")
+
+
+
+```
+
+Next join the Harris donations to the voter data. Remember, people's names are common, __so you'll want to use name columns and address information__. You'll need to figure out which columns to use from both dataframes. The new_voters data has both a single Address column and various parts of the address, such as HouseNumber. Make a plan for picking your join columns - try out some combinations - and save the results to a new dataframe.
+
+```{r}
+# join the combined Harris file to the new voters
+# you will need to determine what columns to use
+# Select (-middl)
+
+harris_contribs_combined<- bind_rows(list(harris_august, harris_july)) 
+
+  ##select(-middle_name)
+glimpse(harris_contribs_combined)
+
+
+```
+
+```{r}
+
+### Middle name don't need to join there's nothing. nothing!
+
+harris_new_voters <- harris_contribs_combined |> 
+  inner_join(new_voters, join_by(last_name == LastName, first_name == FirstName,
+                                address_one == Address, city == ResidentialCity,
+                                ##middle_name == MiddleName,
+                                zip== ResidentialZip,
+                                ))
+colnames(harris_new_voters)
+
+```
+
+
+## Answer questions
+
+Q1. Explain why you used the columns you did to make the join, and why that result is better than other ways you tried. Are there any problems with the join you made, such as the possibility of false positives?
+
+A1. 
+
+I used first, middle last name to further specify the person and reduce the risk
+of  R double counting the same donator. Then, I used address, city and zip to further
+specify that R doesn't think that John Doe of Annapolis was the same John Doe of Bethesda.
+This was better than using house numbers and street names since I had a higher rate of repetition.
+However, the join I made isn't perfect since if middle names aren't recorded there 
+could be matches that can be missed or turned into false positives. 
+Another example is that someone can write 432 D St. and 432 D Street and
+that would show up as two different addresses that R would think is two different people.
+
+Q2. Based on your join, how many donations to Harris have come from people who registered this year? How many unique people does that represent, and which donors have given the largest _number_ of donations since July 20? 
+
+A2. 
+
+- Harris had 324 unique people that registered this year and donated. 
+- The total amount that was donated was 19,190.74.
+- The donors that gave the largest number of donations since July 20 are Sophia
+Hoffer-Perkins, Brittany Musolino and Eric Snipe with 7 total donations given to
+the campaign.
+
+
+```{r}
+harris_new_voters |>
+summarise(count = n(),
+    total_amount = sum(amount)
+  ) |>
+  arrange(desc(total_amount)) 
+
+```
+
+```{r}
+harris_new_voters |>
+  filter(date >= ymd("2024-07-20")) |>
+  group_by(last_name, first_name) |>
+  summarise(count = n(),
+    total_amount = sum(amount)
+  ) |>
+  arrange(desc(count)) 
+
+```
+
+
+Q3. What are the party and gender breakdowns of those donors? How many donations has Harris gotten from non-Democrats?
+
+A3. 
+
+The leading group of Donors for Harris were Female Democrats with 159 donors
+that gave $10,011. The second largest group was Male Democrats with 122 donors
+and $6,951. Fifth largest group is Republican females with 3 donors totaling,
+$69. Then libertarian party males with 2 donors that gave $50. The last group
+that donated to Harris was one Republican male that gave $25. 
+
+- Harris received 32 donations from non-Democrats that totaled 1588.58.
+
+```{r}
+harris_new_voters |> 
+ group_by(Party, Gender) |>
+  summarise(count = n(),
+            total_amount = sum(amount)) |>
+  arrange(desc(count))
+```
+
+```{r}
+##Code to filter and add all the non-democrats 
+
+harris_new_voters |>
+filter(Party == "REP" | 
+         Party == "UNA" | 
+         Party == "LIB" | 
+         Party == "OTH" | 
+         Party == "NLM") |>
+  group_by(Party) |>
+   summarise(count = n(),
+            total_amount = sum(amount)) |>
+  arrange(desc(count))
+```
+
+
+
+Q4. Choose your own adventure: I want you to come up with a question you could ask of one of the dataframes we've created for this lab. It could involve just the new voters, or the donors or the joined dataframe, but it cannot be a variation of a previous question (so, for example, you can't ask, "How many Republicans have given to Harris"). First write the question and then try to answer it by writing code. If you're not sure of the exact code, try googling (or ask me for advice) but, at a minimum, describe what you think you'd have to do to answer it and what the results would look like. That can help.
+
+A4:
+
+I wanted to ask who were the men in the Harris_new_voters dataframe that donated
+the most amount of money to the campaign. 
+
+The first thing I needed to do was filter by gender. Then I grouped by their 
+full name and then added the amounts to turn into total amount of 
+every person. Finally, I arranged it in descending order. 
+
+The results ended perfectly! There's a three way tie for the man that 
+donated the most amount of money to the campaign. This is Kyle Bailey,
+GEOFFREY KINSEY and DENNIS MENG, with 1,000 total amount donated. 
+
+
+```{r}
+harris_new_voters |>
+  filter(Gender == "Male") |>
+  group_by(last_name, first_name) |>
+  summarise(total_amount = sum(amount)
+  ) |>
+  arrange(desc(total_amount)) 
+```
+
+
+
