@@ -137,14 +137,64 @@ reimbursed more than $32,000 for lodging and nearly $12,000 for meals in 2023.
 
 ##We were close in lodgings for Bergman, but not for meals.
 
-### We also tried to reverse engineer that Rep. Matt Gaetz (R-Fla.) was the program’s second-highest overall 
-spender with over $30,000 in lodging expenses and more than $11,000 for meals in 2023.
+### We also tried to reverse engineer that Rep. Matt Gaetz (R-Fla.) was the program’s second-highest overall spender with over $30,000 in lodging expenses and more than $11,000 for meals in 2023.
 
 ##We were able to confirm the over 30,000 expense on lodgings but not for meals. 
 
+***PART 2: THIS IS WHAT WE DID FOR OCTOBER 13, 2024***
+
+**P3.  Some members of Congress who own homes in the Washington area, including Reps. Patrick T. McHenry (R-N.C.), Ro Khanna (D-Calif.) and Michael McCaul (R-Tex.), have chosen not to participate in the program at all. Rep. Jim Banks (R-Ind.), who owns a $1 million home in Virginia, was reimbursed less than $1,500 each month.**
+
+We were able to confirm that Jim Banks of Indiana was reimbursed less than $1,500 each month for lodgings. What 
+we did was first fix the dates that were though to be characters. Then we filtered by
+Jim Banks, then the transaction year we want and the month we want to examine. 
+
+We then grouped by description and then did total amount to see. We ended up
+getting $3862.99, which didn't make sense. So then we filtered by "LODGING".
+In LODGING we were able to see that the perform start date and end date were
+the month this transaction occured. This data gave me the months of January,
+February and March. We got back for these months for lodgings: 1158, 1354, and 
+1350. This confirms that he was reimbursed less than 1,500 each month.
 
 
+```{r}
+JIM <- us_rep_expense |>
+  filter(
+    ORGANIZATION == "2024 HON. JIM BANKS",
+    year(as.Date(`TRANSACTION DATE`, format = "%d-%b-%y")) == 2024,
+    month(as.Date(`TRANSACTION DATE`, format = "%d-%b-%y")) == 4,
+    !str_detect(`SORT SUBTOTAL DESCRIPTION`, "PERSONNEL COMPENSATION|FRANKED MAIL")
+  )
 
+```
+
+```{r}
+
+JIM |>
+  group_by(DESCRIPTION) |>
+  summarise(Total_Amount = sum(AMOUNT)) |>
+  arrange(desc(Total_Amount))
+```
+
+```{r}
+JIM |> filter(DESCRIPTION == "LODGING")
+```
+
+*********THIS IS A FILTER OF THE DATES! ******************
+
+```{r}
+#FIXED DATE
+us_rep_expense <- us_rep_expense |>
+  mutate(
+    `PERFORM START DT` = as.Date(`PERFORM START DT`, format = "%d-%b-%y"),
+    `PERFORM END DT` = as.Date(`PERFORM END DT`, format = "%d-%b-%y"),
+    `TRANSACTION DATE` = as.Date(`TRANSACTION DATE`, format = "%d-%b-%y")
+  )
+```
+
+```{r}
+glimpse(us_rep_expense)
+```
 
 
 
