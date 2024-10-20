@@ -1,0 +1,254 @@
+---
+title: "lab_07"
+author: "Stella S. Canino"
+date: "2024-08-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## You will need
+
+-   A Census API key
+
+## Load libraries and establish settings
+
+You'll need to load two packages for this: the tidyverse and tidycensus.
+
+**Task** load these two packages
+
+```{r}
+# Turn off scientific notation
+options(scipen=999)
+
+# Load the tidyverse.
+library(tidyverse)
+library(tidycensus)
+```
+
+## Setup Census API
+
+You'll need your Census API Key:
+
+**Task** set your API Key *only* if you haven't already
+
+```{r echo=FALSE}
+census_api_key("36b0c56a10735a0e4734df1d4307cb15cae54270", overwrite=TRUE)
+```
+
+## Load and view ACS variables
+
+You'll also need to load the list of American Community Survey variables from the 2022 5-year estimates so you can identify the codes you need:
+
+**Task** load the variables from the 2022 5-year ACS and save them to a dataframe
+
+```{r}
+acs_2022 <- load_variables(2022, "acs5", cache = TRUE)
+View(acs_2022)
+```
+
+## Answer questions
+
+**Q1** What is the Maryland jurisdiction with the lowest median age, according to the ACS 2022 5-year estimates? You will need to find the variable for median age first.
+
+**A1**
+
+Baltimore City had the lowest median age.
+
+```{r}
+
+##B19013_001 --> c
+md <- get_acs(geography = "county",
+              variables = c(medianage = "B01002_001"),
+              state = "MD",
+              year = 2022)
+
+md |> arrange(estimate)
+
+```
+
+**Q2** Which Maryland counties have a median age of at least 50? You can use the dataframe you just made to answer this, but you must write code to display only those counties with a median age of at least 50.
+
+**A2**
+
+Counties with a median age of at least 50 are Talbot and Worcester.
+
+```{r}
+
+md |> filter(estimate >= 50)
+
+```
+
+## Ticket-Splitting
+
+Ticket-splitting (voting for candidates from multiple parties) in today's political environment seems like a rarity, but it does happen, even in states like Maryland. For the remaining questions you'll be looking at cast vote records from Frederick County - Maryland's most competitive county - for the 2022 general election. You'll be trying to identify the zip codes where ticket-splitting is happening the most and to learn more about those places. To do that, you'll need to read in two CSV files, join them and then also bring in data from the Census API.
+
+### Setup
+
+Load the two CSV files in the `data` folder: one containing the ballot choices of Frederick voters in five races (governor, comptroller, attorney general and U.S. House) and the other containing information about Frederick's voting locations. You'll need to join them together.
+
+```{r}
+
+fred_choices <- read.csv("data/frederick_cvr.csv")
+fred_location <- read.csv("data/frederick_precincts.csv")
+```
+
+```{r}
+glimpse(fred_choices)
+glimpse(fred_location)
+```
+
+```{r}
+fred_location |> mutate(zipcode = as.character(zipcode))
+
+```
+
+**Q3** Let's answer some basic questions about ticket-splitting: how many voters voted for different parties in the governor and comptroller's race? How many voted for the same party in both races? What percentage of all voters split their tickets in those races? In how many cases did voters choose the same party in all five contests? What percentage of all voters does that represent?
+
+**A3**
+
+95,221 voters voted for the same parties in both races. 11,871 were the people 
+that split the ticket. 11% of the total electorate split the ticket. 89,916 voters
+chose to cast the same ballot for the same party. 84% of the electorate voted
+with their party.
+ 
+```{r}
+fred_choices |> select(governor_lt_governor, comptroller) |>
+  group_by(governor_lt_governor, comptroller) |>
+  summarize(count = n()) |>
+  arrange(desc(count))
+```
+
+```{r}
+#ticket-split
+ fred_choices |>
+  filter(governor_lt_governor != comptroller) |>
+  summarize(count = n())
+
+```
+
+```{r}
+##same party votes
+ fred_choices |>
+  filter(governor_lt_governor == comptroller) |>
+  summarize(count = n())
+
+```
+
+```{r}
+##Percent that split the ticket in comptroller and governor
+
+fred_choices |>
+  group_by(split = governor_lt_governor != comptroller) |> # Group by whether they split
+  summarize(count = n()) |>  # Count the number of voters in each group
+  mutate(total_voters = sum(count),  # Calculate total voters across groups
+         percentage = (count / total_voters) * 100) 
+```
+
+```{r}
+## mutate and function feeding equal true case when == x -- x 
+
+fred_choices1 <- fred_choices |>
+  mutate(
+    same_party = case_when(governor_lt_governor == u_s_senator & 
+      u_s_senator == comptroller & 
+      comptroller == representative_in_congress_6 & 
+      representative_in_congress_6 == attorney_general ~ TRUE,
+      TRUE ~ FALSE 
+    )) |> 
+   summarize(
+    total_same_party = sum(same_party, na.rm = TRUE),  # Count how many TRUE values
+    percentage_same_party = (total_same_party / n()) * 100  # Calculate the percentage
+  )
+```
+
+```{r}
+fred_choices |>
+  summarise(
+    total_same_party = sum(same_party, na.rm = TRUE)  # Count how many TRUE values
+  ) |> 
+  summarize(
+    percentage_same_party = (total_same_party / n()))
+```
+
+**Q4** Now let's look for the zip codes where voters preferred Republicans in every race *except* the governor's race, where Dan Cox lost to Wes Moore by a wide margin. Write code to generate a dataframe of zip codes with the number of those voters for each of those zip codes, ordering the dataframe so that the zip code with the most ticket-splitters appears first.
+
+**A4**
+
+The zipcode with the most amount of ticket splitters for Republicans, except the
+governor's race was 21702, 21701, 21793, 21770 and 21703.
+
+```{r}
+fred_choice_loc <- fred_choices |> left_join(fred_location, join_by (precinct)) 
+
+fred_choice_loc <- fred_choice_loc |> mutate(zipcode = as.character(zipcode))
+glimpse(fred_choice_loc)
+```
+
+```{r}
+tix_split <- fred_choice_loc |> mutate(
+   dif_party = case_when(
+      governor_lt_governor == "DEM" &
+      u_s_senator == "REP" & 
+      comptroller == "REP" & 
+      representative_in_congress_6 == "REP" & 
+      attorney_general == "REP" ~ TRUE,
+      TRUE ~ FALSE 
+    ))
+```
+
+```{r}
+tix_split |> filter(dif_party == TRUE) |>
+  group_by(zipcode, dif_party, precinct) |>
+  summarise(cast_vote_record) |>
+  arrange(desc(cast_vote_record))
+
+```
+
+```{r}
+tix_split_summary <- tix_split |> 
+  filter(dif_party == TRUE) |> 
+  group_by(zipcode) |> 
+  summarise (count = n()) |> 
+  arrange(desc(count))
+```
+
+
+**Q5** Let's find out more about those zip codes from A4. Using tidycensus, get a dataframe of Maryland zip codes and their median ages, then join it to the dataframe you produced in A4. NOTE: you'll need to ensure that the two columns you use for the join are the same datatype. Summarize your findings; how would you describe the zip codes with more non-Cox Republicans compared to those with fewer? Where are those leading zip codes located?
+
+**A5**
+These are the leading zip codes 21703, 21702, 21770, 21773, 21754, and 21703	
+The zipcodes with the most Non-Cox voters tend to have a median age of 35 to
+40. These areas tend to be the suburban almost rural sections of the county. 
+
+```{r}
+all_zcta_median_age <- get_acs(geography = "zcta", 
+                               variables = "B01002_001",  # Median age variable
+                               year = 2022, 
+                               survey = "acs5", 
+                               geometry = FALSE) %>%
+                       select(GEOID, estimate) %>%
+                       rename(zipcode = GEOID, median_age = estimate)
+
+glimpse(all_zcta_median_age)
+```
+
+```{r}
+zipcodes_med_age <- all_zcta_median_age |> 
+  inner_join(
+    tix_split |> mutate(zipcode = as.character(zipcode)), 
+    by = "zipcode"
+  )
+```
+
+
+```{r}
+zipcodes_med_age |> filter(dif_party == TRUE) |>
+  group_by(zipcode, median_age) |>
+  summarise(cast_vote_record, count = n()) |>
+  arrange(desc(cast_vote_record))
+
+```
+
