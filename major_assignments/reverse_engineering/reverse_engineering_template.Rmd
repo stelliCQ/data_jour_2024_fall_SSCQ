@@ -1,7 +1,7 @@
 ---
 title: "Reverse Engineering Project"
-author: "Student names here"
-date: "Date here"
+author: "Stella S. Canino, Wade DeVinney, and Miles Grovic"
+date: "October 20, 2024"
 output:
   html_document:
     theme: cerulean
@@ -18,7 +18,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction 
 
-In this notebook, we are reverse engineering the story, [STORY NAME](STORY URL)
+In this notebook, we are reverse engineering the story.
+
+Title:"Lawmakers expensed millions in 2023 under new program that doesn’t require receipts"
 
 ## Load libraries
 
@@ -27,6 +29,17 @@ Loading required libraries for this analysis.
 ```{r echo=FALSE, message=FALSE}
 
 ```
+
+```{r}
+# Turn off scientific notation
+options(scipen=999)
+
+library(tidyverse)
+library(janitor)
+library(lubridate)
+
+```
+
 
 ## Load and Cleaning Data
 
@@ -37,9 +50,41 @@ In this section, describe the source of the data, write a basic data dictionary 
 
 # Path to data should be loaded from folder "data" i.e. read_csv("data/name_of_data.csv")
 
+april_june <- read.csv("~/Documents/GitHub/data_jour_2024_fall_SSCQ/major_assignments/reverse_engineering/data/APRIL-JUNE 2023 SOD DETAIL GRID-FINAL.csv")
+
+jan_march <- read.csv("~/Documents/GitHub/data_jour_2024_fall_SSCQ/major_assignments/reverse_engineering/data/JAN-MAR-2023-SOD-DETAIL-GRID-FINAL.csv")
+
+july_sept <- read.csv("~/Documents/GitHub/data_jour_2024_fall_SSCQ/major_assignments/reverse_engineering/data/JULY-SEPTEMBER-2023-SOD-DETAIL-GRID-FINAL.csv")
+
+oct_dec <- read.csv("~/Documents/GitHub/data_jour_2024_fall_SSCQ/major_assignments/reverse_engineering/data/OCT-DEC-2023-SOD-DETAIL-GRID-FINAL.csv")
+
 # Clean required data and prepare for analysis if needed. 
+```
 
+```{r}
 
+april_june$BUDGET.OBJECT.CODE <- as.character(april_june$BUDGET.OBJECT.CODE)
+jan_march$BUDGET.OBJECT.CODE <- as.character(jan_march$BUDGET.OBJECT.CODE)
+july_sept$BUDGET.OBJECT.CODE <- as.character(july_sept$BUDGET.OBJECT.CODE)
+oct_dec$BUDGET.OBJECT.CODE <- as.character(oct_dec$BUDGET.OBJECT.CODE)
+
+# Now bind the rows together
+us_rep_expense <- bind_rows(april_june, jan_march, july_sept, oct_dec)
+
+glimpse(us_rep_expense)
+```
+
+```{r}
+us_rep_expense <- us_rep_expense |>
+  mutate(
+    PERFORM.START.DT = as.Date(PERFORM.START.DT, format = "%d-%b-%y"),
+    PERFORM.END.DT = as.Date(PERFORM.END.DT, format = "%d-%b-%y"),
+    TRANSACTION.DATE = as.Date(TRANSACTION.DATE, format = "%d-%b-%y")
+  )
+```
+
+```{r}
+glimpse(us_rep_expense)
 ```
 
 ## Sentences to Engineer
@@ -47,62 +92,186 @@ In this notebook, we are reverse engineering five sentences from the story.
 
 ### Sentence 1
 
-* **Sentence text**: [Paste in sentence to engineer here]
+* **Sentence text**: P1. Rep. Jack Bergman (R-Mich.) was the program’s top spender last year. He was reimbursed more than $32,000 for lodging and nearly $12,000 for meals in 2023, according to data released by the House as of Tuesday.
+
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+
+For Rep. Jack Bergman we found that he spent $49,695.49 in Lodgings in 2023, which
+matches the description of more than $32,000. However, for meals we were only able
+to calculate 4388.89. We believe that for meals may have been reclassified under
+something else to get this 12,000 total. 
 
 ```{r}
 # Put code to reverse engineer sentence here
 
+JACK <- us_rep_expense |> filter(ORGANIZATION == "2023 HON. JACK BERGMAN") 
+
+
 # Display results of code below this codeblock
+#This is Meals
+JACK |>
+  filter(BUDGET.OBJECT.CODE %in% c("2110", "2603", "2602", "2109")) |>
+  group_by(ORGANIZATION, BUDGET.OBJECT.CODE) |>
+  summarise(TOTAL_AMOUNT = sum(AMOUNT)) |>
+  arrange(desc(TOTAL_AMOUNT))
+
+```
+
+
+```{r}
+##This is lodging for Bergman
+JACK |> filter(BUDGET.OBJECT.CODE == "2105") |>
+  group_by(ORGANIZATION, BUDGET.OBJECT.CODE) |>
+  summarise(TOTAL_AMOUNT = sum(AMOUNT)) |>
+  arrange(desc(TOTAL_AMOUNT))
 
 ```
 
 ### Sentence 2
 
-* **Sentence text**: [Paste in sentence to engineer here]
+* **Sentence text**: Rep. Matt Gaetz (R-Fla.) was the program’s second-highest overall spender, according to filings released as of Tuesday, with over $30,000 in lodging expenses and more than $11,000 for meals in 2023. 
+
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+
+For Rep. Matt Gaetz, we found that for lodgings he spent $36,340.09 in 2023,
+which fits the description of over $30,000 in the article. For meals, we have
+$18411.61, which fits the description of spending more than $11,000 on meals.
 
 ```{r}
 # Put code to reverse engineer sentence here
+##GAETZ LODGINGS
+
+Gaetz <- us_rep_expense |> filter(ORGANIZATION == "2023 HON. MATT GAETZ") 
+
+# Display results of code below this codeblock
+
+##This is for lodgings
+Gaetz |>
+  filter(BUDGET.OBJECT.CODE == c("2107", "2105")) |>
+  group_by(ORGANIZATION, BUDGET.OBJECT.CODE) |>
+  summarise(TOTAL_AMOUNT = sum(AMOUNT)) |>
+  arrange(desc(TOTAL_AMOUNT))
 
 # Display results of code below this codeblock
 
 ```
+
+```{r}
+#Meals 
+Gaetz |>
+  filter(BUDGET.OBJECT.CODE %in% c("2109", "2110", "2603", "2602")) |> 
+ group_by(ORGANIZATION, BUDGET.OBJECT.CODE) |>
+  summarise(TOTAL_AMOUNT = sum(AMOUNT)) |>
+  arrange(desc(TOTAL_AMOUNT))
+
+```
+
 
 ### Sentence 3
 
-* **Sentence text**: [Paste in sentence to engineer here]
+* **Sentence text**: Some members of Congress who own homes in the Washington area, including Reps. Patrick T. McHenry (R-N.C.), Ro Khanna (D-Calif.) and Michael McCaul (R-Tex.), have chosen not to participate in the program at all. Rep. Jim Banks (R-Ind.), who owns a $1 million home in Virginia, was reimbursed less than $1,500 each month.
+
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+
+We were able to confirm that Jim Banks was reimbursed less than $1,500 a month of lodgings, 
+which was used to compare Gaetz lodgings expense. The highest expense in a month
+that he had was 1401.92 in October. 
 
 ```{r}
 # Put code to reverse engineer sentence here
-
+JIM <- us_rep_expense |> filter(ORGANIZATION == "2023 HON. JIM BANKS")
 # Display results of code below this codeblock
-
 ```
+
+```{r}
+#Lodgings per month of JIM
+JIM |> filter(BUDGET.OBJECT.CODE == c("2107", "2105")) |>
+  mutate(Month = month(as.Date(PERFORM.END.DT, format = "%d-%b-%y`"))) |>
+ group_by(Month, BUDGET.OBJECT.CODE) |>
+  summarise(AMOUNT) |>
+  arrange(desc(AMOUNT))
+    
+```
+
 
 ### Sentence 4
 
-* **Sentence text**: [Paste in sentence to engineer here]
+* **Sentence text**: Mace, who co-owns a $1,649,000 Capitol Hill townhouse she purchased in 2021 with her then-fiancé, Patrick Bryant, expensed a total of $27,817 in 2023. She expensed over $3,000 for lodging in January, March, and May and over $4,000 for lodging in October.
+
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+
+For Nancy Mace, we found that she reimbursed $33,263.22 for lodgings in 2023, which is
+more than the total expressed in the article.For the months of January, 
+March and May, we confirmed that she reimbursed over 3,000 those months: 3612.00	(MAY),	3354.00	(MARCH)	
+and 3196.00 (JAN). We believe that its possible that our lodging numbers were larger
+because of a differiation that the authors did with those numbers. 
 
 ```{r}
 # Put code to reverse engineer sentence here
 
+MACE <- us_rep_expense |>
+  filter(ORGANIZATION == "2023 HON. NANCY MACE")
+
+##LODGING
+MACE |> filter(DESCRIPTION == "LODGING") |>
+  group_by(DESCRIPTION) |>
+  summarise(TOTAL_AMOUNT = sum(AMOUNT)) |>
+  arrange(desc(TOTAL_AMOUNT))
+
 # Display results of code below this codeblock
+```
+
+```{r}
+
+MACE |> filter(DESCRIPTION == "LODGING") |>
+  mutate(Month = month(as.Date(PERFORM.START.DT, format = "%d-%b-%y`"))) |>
+ group_by(DESCRIPTION) |>
+  summarise(AMOUNT, Month) |>
+  arrange(desc(AMOUNT)) 
+    
+    
+    
 
 ```
+
 
 ### Sentence 5
 
-* **Sentence text**: [Paste in sentence to engineer here]
+* **Sentence text**: Swalwell, who purchased a $1,215,000 home in the Eckington neighborhood of Washington, was reimbursed more than $20,000 for lodging expenses in 2023, according to the data released as of Tuesday. In May 2023, he received $2,838 in lodging reimbursement.
+
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+
+For Swalwell, we found that he spent $28,185.23 on Lodgings in 2023, which match the description
+of him being reimbursed more than $20,000. Furthermore, we were able to confirm that he spent
+$2838.00 in May with our code. 
 
 ```{r}
 # Put code to reverse engineer sentence here
 
+SWALWELL <- us_rep_expense |> filter(ORGANIZATION == "2023 HON. ERIC SWALWELL")
+
+##TOTAL LODGINGS
+SWALWELL |> filter(BUDGET.OBJECT.CODE == c("2105","2107")) |>
+  group_by(BUDGET.OBJECT.CODE) |>
+  summarise(TOTAL_AMOUNT = sum(AMOUNT)) |>
+  arrange(desc(TOTAL_AMOUNT))
+
 # Display results of code below this codeblock
 
 ```
+
+```{r}
+##Lodging for May for Swawell. 
+
+SWALWELL |> filter(BUDGET.OBJECT.CODE == c("2105","2107")) |> 
+  mutate(Month = month(as.Date(PERFORM.END.DT, format = "%d-%b-%y`"))) |>
+ group_by(Month, BUDGET.OBJECT.CODE) |>
+  summarise(AMOUNT) |>
+  arrange(desc(AMOUNT))
+  
+
+```
+
+
 
 -30-
