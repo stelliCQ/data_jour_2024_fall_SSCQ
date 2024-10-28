@@ -18,9 +18,18 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction 
 
-In this notebook, we are reverse engineering the story.
+In this notebook, we are reverse engineering the story in this Washington Post article: "Lawmakers expensed millions in 2023 under new program that doesn’t require receipts."
 
-Title:"Lawmakers expensed millions in 2023 under new program that doesn’t require receipts"
+Link: https://www.washingtonpost.com/politics/2024/06/04/house-representatives-expenses-receipts-lodging/
+
+
+For this project, we considered that the article reported on the expenses of 2023 and looked for the CSV files in the archives of the U.S. House of Representatives. The entire year of 2023 were divided into four csv files that
+we had to join together to form one csv file with the whole year. This data required some cleaning by turning the BUDGET.OBJECT.CODE into a character. Then, we cleaned the dates columns of the CSV file. 
+
+For the sentences we reversed, the engineer most involved the expenses of the congresspeople in total. To make it easier to observe, we created a new data frame by filtering by organization, where the name of their office (so them) is. After filtering for their office, we filtered further by description and budget object code. Description is the specific ID number for the types of expenses that are reported. For example, 2109 is the ID for meals and 2107 is the ID for Lodgings. We know these codes mean what they mean via the description column. We have a mix and match of this depending on the preference of the person answering the sentence.
+
+After that, we would group by the budget object code or description and then summarize by the month amount and total amount in descending order, depending on the question.
+
 
 ## Load libraries
 
