@@ -205,7 +205,7 @@ JIM |> filter(BUDGET.OBJECT.CODE == c("2107", "2105")) |>
 
 ### Sentence 4
 
-* **Sentence text**: Mace, who co-owns a $1,649,000 Capitol Hill townhouse she purchased in 2021 with her then-fiancé, Patrick Bryant, expensed a total of $27,817 in 2023. She expensed over $3,000 for lodging in January, March, and May and over $4,000 for lodging in October.
+* **Sentence text**: Mace, who co-owns a $1,649,000 Capitol Hill townhouse she purchased in 2021 with her then-fiancé, Patrick Bryant, expensed a total of $27,817 in 2023. She expensed over $3,000 for lodging in January, March, and May.
 
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
