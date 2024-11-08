@@ -1,0 +1,276 @@
+---
+title: "lab_10"
+author: "Stella S. Canino"
+date: "2024-11-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## You will need
+
+-   the tidyverse, janitor and tigris libraries
+-   you might choose to use the tidycensus library for Q3
+
+## Load libraries and establish settings
+
+**Task** Create a codeblock and load appropriate packages and settings for this lab.
+
+```{r}
+# Turn off scientific notation
+options(scipen=999)
+
+# Load libraries
+library(tidyverse)
+library(janitor)
+library(tigris)
+library(tidycensus)
+library(sf)
+library(janitor)
+library(ggplot2)
+```
+
+Let's explore the election results from last night and make some maps!
+
+## Questions
+
+**Q1.** Make a county-level map of Maryland's results for U.S. Senate using `md_senate_county_24.csv` in the data folder, calculating the difference between Angela Alsobrooks's percentage of the total votes and Larry Hogan's percentage of the total votes and displaying that percentage difference on the map. What is the story here, and what is the county with the most interesting results?
+
+**A1.**
+
+The 2024 Maryland Senate map shows the percentage difference of Alsobrooks
+and Hogan. We see that the majority of counties displayed a negative percentage difference,
+meaning that Hogan received a higher percentage of votes than Angela Alsobrooks. 
+
+```{r}
+md_senate_county_24 <- read.csv("data/md_senate_county_24.csv")
+
+
+md_senate_county_24 <- md_senate_county_24 |> mutate(GEOID = as.character(GEOID))
+  glimpse(md_senate_county_24)
+```
+
+```{r}
+md_senate_county_24 <- md_senate_county_24 |>
+  mutate(Total = Alsobrooks + Hogan + Scott) |>
+  mutate(Alsobrooks_Percent = Alsobrooks/Total * 100) |>
+  mutate(Hogan_Percent = Hogan/Total * 100) |>
+  mutate(Percent_Difference = Alsobrooks_Percent - Hogan_Percent)
+```
+
+```{r}
+counties <- counties()
+glimpse(counties)
+
+md_counties <- counties |>
+  filter(STATEFP == "24")
+```
+
+```{r}
+md_counties <- md_counties |>
+  rename(County = NAME) 
+  
+md_counties
+```
+
+```{r}
+map_senate_county_24 <- md_senate_county_24 |>
+  left_join(md_counties, join_by(GEOID))
+```
+
+```{r}
+ggplot() +
+  geom_sf(data=map_senate_county_24, aes(fill=Percent_Difference)) + 
+  scale_colour_viridis_b(option="magma") +
+  theme_minimal()
+
+```
+
+```{r}
+map_senate_county_24 <- st_as_sf(map_senate_county_24)
+```
+
+**Q2.** Make a county-level map showing the difference between Donald Trump's county-level performance this year and Larry Hogan's, using percentages to compare the two as you did in Q1. You can use the dataframe you initially loaded for Q1, and you'll need to load the 2024 presidential results in the data folder and join them to it before proceeding. Are there any counties where Trump got a higher percentage than Hogan? How would you describe the map showing the Trump-Hogan difference?
+
+Also answer this: is a map the best way to present this data? What else could you make that might convey more information?
+
+**A2.**
+
+The Trump-Hogan map shows the percentage difference between Trump and
+Hogan's percentage difference with the blue shades showing the counties that
+voted more for Hogan than Trump, and red showing the inverse. The majority of 
+counties voted more for Hogan than for Trump. The counties that had a higher
+Trump percentage were Allegeny, Garrett and Somerset. 
+
+I don't think it is since the legend is majority in the negative sign it might
+confuse readers. I think that the arrow map that was shown in class could be
+better at explaining this.
+
+
+** the negative values mean that Hogan's percentage was higher than Trump's in those counties, and the magnitude of the number indicates the size of this difference.**
+
+```{r}
+pres_results_24 <- read.csv("data/md_pres_county_24.csv")
+```
+
+```{r}
+pres_results_24 <- pres_results_24 |>
+  mutate(Total = Harris + Trump + Oliver + Stein + Kennedy) |>
+  mutate(Trump_Percent = Trump/Total * 100)
+```
+
+```{r}
+pres_results_24 <- pres_results_24 |> mutate(GEOID = as.character(GEOID))
+  glimpse(pres_results_24)
+```
+
+```{r}
+hogan_trump_map <- map_senate_county_24 |>
+  left_join(pres_results_24, join_by(GEOID))
+
+glimpse(hogan_trump_map)
+```
+
+```{r}
+hogan_trump_map <- hogan_trump_map |>
+  mutate(difference_Trump= Trump_Percent - Hogan_Percent)
+
+glimpse(hogan_trump_map)
+```
+
+```{r}
+hogan_trump_map <- st_as_sf(hogan_trump_map)
+```
+
+```{r}
+ggplot() +
+  geom_sf(data=hogan_trump_map, aes(fill=difference_Trump)) + scale_fill_gradient(low = "turquoise", high = "red") + 
+  theme_minimal()
+```
+
+**Q3** Make another map showing the difference between Larry Hogan's county-level performance this year and from his governor race in 2018, using percentages to compare the two as you did in Q2. You can use the dataframe you initially loaded for Q1, and you'll need to load the 2018 governor results in the data folder and join them to it before proceeding. Are there any counties where Hogan did better this year? How would you describe the map showing the difference?
+
+**A3**
+
+The Hogan performance map illustrates the percentage differences between Hogan's 2018
+governor campaign and his 2024 Senate race. The yellow shades indicate areas where he
+performed the least well in 2018, while the red shades represent areas where he
+performed significantly better in 2018 compared to 2024. Overall, Hogan had 
+a better performance in his 2018 governor run than his Senate run. Hogan did
+better was Talbot, Anne Arundel and Baltimore county. 
+
+
+
+```{r}
+hogan_2018 <- read.csv("data/md_gov_county_18.csv")
+
+hogan_2018 <- hogan_2018 |> mutate(GEOID = as.character(GEOID)) |>
+  mutate(Total = Hogan + Jealous + Quinn + Schlakman + Write.ins) |>
+  mutate(Hogan_Percent18 = Hogan/Total * 100
+        )
+
+glimpse(hogan_2018)
+```
+
+```{r}
+hogan_performance <- map_senate_county_24 |> left_join(hogan_2018, join_by(GEOID))
+
+hogan_performance <- hogan_performance |> select(-County.y, -NAMELSAD, -County) 
+
+
+```
+
+```{r}
+hogan_performance <- hogan_performance |> 
+  rename(County = County.x)
+
+glimpse(hogan_performance)
+```
+
+```{r}
+
+hogan_performance <- hogan_performance |>
+  mutate(Hogan_Difference = Hogan_Percent18 - Hogan_Percent)
+
+
+hogan_performance <- st_as_sf(hogan_performance)
+```
+
+
+```{r}
+
+ggplot() +
+  geom_sf(data=hogan_performance, aes(fill=Hogan_Difference)) +
+  scale_fill_gradient(low = "yellow", high = "red") +
+  theme_minimal()
+
+```
+
+**Q4.** Choose your own map adventure! In the data folder I've included Maryland county-level results for the abortion rights amendment vote this year, plus the 2020 presidential results by county and 2022 governor's results by county. Using one of those and at least one other contest for comparison, make a county-level map showing what you think is the most interesting aspect of that data, and describe the results in terms of a possible story. You can bring in other data, such as Census information, if you like.
+
+**A4.**
+
+I wanted to find out if there was a gap between people that filled in their
+ballot for the 2024 presidential election and the people who voted for the 
+abortion rights amendment. I thought that it could be a possible story on the 
+possibility of counties showing a higher engagement in the ammendment than the
+presidential election or vice versa. 
+
+My results were that the top five most 
+populated counties in Maryland: Baltimore County, Baltimore City,Anne Arundel
+PG and Montgomery had the largest voter gaps, meaning that people voted in the
+election, but not to the ammendment. It's interesting since these are the 
+states that are the most bluest in Maryland. 
+
+```{r}
+abortion <- read.csv("data/md_abortion_24.csv")
+glimpse(abortion)
+```
+```{r}
+abortion <- abortion |>
+  mutate(Total_Voted = For + Against)
+```
+
+```{r}
+geography_pres_24 <- pres_results_24 |>
+  left_join(md_counties, join_by(GEOID))
+  
+geography_pres_24 <- geography_pres_24 |>
+  select(-County.y,-NAMELSAD) 
+  
+geography_pres_24 <- geography_pres_24 |>
+  rename(County = County.x)
+  
+
+geography_pres_24
+``` 
+
+```{r}
+abort_pres_gap <- geography_pres_24 |>
+  left_join(abortion, join_by(County))
+
+abort_pres_gap <- abort_pres_gap |> 
+  mutate(Voter_Gap = Total-Total_Voted)
+  
+```
+
+```{r}
+abort_pres_gap <- st_as_sf(abort_pres_gap)
+```
+
+```{r}
+ggplot() +
+  geom_sf(data=abort_pres_gap, aes(fill=Voter_Gap)) +
+  scale_fill_gradient(low = "pink", high = "purple") +
+  theme_minimal()
+```
+
+
+
+
+
+
+
+-30-
