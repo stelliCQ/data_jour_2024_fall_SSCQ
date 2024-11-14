@@ -1,0 +1,223 @@
+---
+title: "lab_11"
+author: "Stella S. Canino"
+date: "2024-11-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## You will need
+
+-   Our usual libraries for working with data, including dates and column names, plus rvest.
+
+## Load libraries and establish settings
+
+**Task** Create a codeblock and load appropriate packages and settings for this lab.
+
+```{r}
+#| output: false
+library(rvest)
+library(tidyverse)
+library(janitor)
+library(ggplot2)
+library(lubridate)
+#install.packages("rvest")
+
+library(rvest)
+
+```
+
+Let's get to scraping. We'll be working on collecting information about Maryland election results, and then we'll grab some congressional press releases. For Maryland races, we'll focus on Board of Education races using this CNS story as a guide: <https://cnsmaryland.org/2024/11/08/md-conservatives-make-gains-in-school-board-races/>. You should read it.
+
+## Questions
+
+**Q1**. Write code to scrape the table of unofficial results from Frederick County's Board of Education races (<https://elections.maryland.gov/elections/2024/general_Results/gen_results_2024_by_county_11.html>), producing a dataframe that contains the results of that race for each candidate and removing the total. You'll need to identify which table on the page contains the BOE results. All numbers should actually be numbers, including the percentage. Then make a bar chart of the results, noting that the top 3 candidates win.
+
+**A1**
+
+```{r}
+board_url <- "https://elections.maryland.gov/elections/2024/general_Results/gen_results_2024_by_county_11.html"
+```
+
+```{r}
+board_results <- board_url |>
+  read_html() |>
+    html_table()
+
+
+# display the html below
+board_results
+
+```
+
+```{r}
+# Just keep the first dataframe in our list
+
+board_results <- board_results[[9]]
+
+# show the dataframe
+
+board_results
+```
+
+```{r}
+
+board_results |>
+  clean_names() |>
+  rename(Early_Voting = 2, Election_Day = 3, Mail_in_Ballot = 4, Provisional = 5, Total = 6,  Percentage = 7) |>
+  slice(-25) |>
+  mutate(Early_Voting = as.numeric(gsub(",", "", Early_Voting))) |>
+  mutate(Election_Day = as.numeric(gsub(",", "", Election_Day))) |>
+  mutate(Mail_in_Ballot = as.numeric(gsub(",", "", Mail_in_Ballot))) |> 
+  mutate(Provisional = as.numeric(gsub(",", "", Provisional))) |> 
+   mutate(Total = as.numeric(gsub(",", "", Total))) |> 
+  mutate(Percentage = as.numeric(gsub("%", "", Percentage)))
+
+```
+
+```{r}
+board_results <- board_results |>
+  filter(Name != "Totals")
+
+```
+
+
+```{r}
+ggplot(data = board_results, aes(x = Name, y = Total, fill = Total)) +
+  geom_bar(stat = "identity") +  # Use stat = "identity" because Percentage is provided directly
+  theme_minimal() +
+  labs(title = "Brennan, Monier, and Morningstar Black: Top 3 Candidates for BOE", x = "Candidate", y = "Total")
+
+```
+
+**Q2** Next, let's scrape the list of press releases from Maryland's Office of the State Prosecutor, <https://osp.maryland.gov/category/press-releases/>. This isn't a table, so you'll need to use `html_elements()` and your browser's inspector and do some clean up on the results. The result should be a dataframe with three columns: title, url and date. HINT: you can extract the date from the title using lubridate OR you can use the `separate` function.
+
+You should have 10 releases when finished, not 20.
+
+Then, write code that finds the most recent release with the word "Campaign" in the title. What election does it refer to?
+
+**A2**
+It refers to the 2024 election campaign for governor of John King that was
+cited for authority line violations.
+
+```{r}
+press_release_url <- "https://osp.maryland.gov/category/press-releases/"
+```
+
+```{r}
+press_release_results <- press_release_url |>
+  read_html()
+
+# show the result
+press_release_results
+```
+```{r}
+press_release_results <- press_release_results |>
+  html_elements("article ")
+```
+
+```{r}
+
+press_release_results <- tibble(
+  name = press_release_results %>% html_text(trim = TRUE), 
+  url = press_release_results %>% html_node("a") %>% html_attr("href"), 
+  date = press_release_results %>% html_node("time") %>% html_text(trim = TRUE)
+)
+```
+
+```{r}
+press_release_results
+```
+
+```{r}
+most_recent_campaign <- press_release_results |>
+  filter(str_detect(name, "Campaign")) |>
+  arrange(desc(date)) |>
+  slice(1)
+```
+
+
+**Q3** Sen. Ben Cardin, D-Maryland, has posted hundreds of press releases at <https://www.cardin.senate.gov/?post_type=press-releases>. It would be great to have all of them in a dataframe that has the following columns: date, title and url.
+
+To do this, you will need to scrape the page's html and save that to a variable, and *then* extract the dates, titles and urls into *separate* dataframes using html_elements(). We turn a list into a dataframe using `as_tibble()`.
+
+At the end, you'll have three dataframes that you want to combine into a single dataframe. When we want to combine the rows of identical dataframes, we used `bind_rows()`. If you were combining columns instead of rows, there's a similar function. Use it to put all of the dataframes together into a single one. You are combining columns, not rows.
+
+When you're done, rename the columns so they make sense, then make sure the date column is an actual date.
+
+Finally, tell me what questions you could ask of this data, and what other information about it would be useful to have. Be creative.
+
+We could see in his press releases how many bills that he sponsored and consponsored
+that passed the Senate. We could also find what are the top topics and policy 
+areas that Cardin had press releases about. It woyld be interesting to have
+the information in the columns be tied to when Congress was in session.
+
+**A3**
+
+```{r}
+cardin_url <- "https://www.cardin.senate.gov/?post_type=press-releases"
+```
+
+```{r}
+cardin_press <- cardin_url |>
+  read_html()
+
+# show the result
+cardin_press
+```
+```{r}
+
+press_release_title <- cardin_press |> 
+  html_nodes(xpath = "//h3[@class='customBlog_item__title']/a") |>
+  html_text()
+
+press_release_title <- tibble(Title = press_release_title)
+```
+
+```{r}
+press_release_dates <- cardin_press |>
+  html_elements(xpath = "//h5[@class='customBlog_item__date']") |>
+  html_text()
+
+press_release_dates <- tibble(Date = press_release_dates)
+
+press_release_dates
+
+```
+
+```{r}
+press_release_dates <- press_release_dates %>%
+  mutate(
+    Date = gsub(",", "", Date),  # Remove commas
+    Date = as.Date(Date, format = "%b %d %Y")  # Convert to Date type (e.g., Nov 11 2024)
+  )
+
+press_release_dates
+```
+
+
+```{r}
+#HERE FOR REFERENCE. THIS DIDN'T DO SO WELL. 
+dateee <- cardin_press |>
+  html_elements("h5")
+
+dateee <- as_tibble(Date = dateee)
+```
+
+```{r}
+press_release_urls <- cardin_press |>
+  html_elements(xpath = "//a[@class='customBlog_item__readMore']") |>
+  html_attr("href")
+
+# Convert to tibble so it's visible in the Global Environment
+press_release_urls <- tibble(URL = press_release_urls)
+```
+
+```{r}
+Cardin_Data <- bind_cols(press_release_title, press_release_urls, press_release_dates)
+```
+
+
