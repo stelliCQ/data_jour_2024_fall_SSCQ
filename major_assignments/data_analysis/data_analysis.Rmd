@@ -97,3 +97,61 @@ The way we can express it in this data is with the sum of “AMOUNT” grouped b
 Five: There wouldn’t be any issues for this question with the dataset. 
 All of the descriptions are listed and they are well documented.
 
+**DATA ANALYSIS 3**
+
+In this third deliverable, we decided to try to answer Q4 and Q5, 
+
+Question 4:  Who is the top spender based on the data available for 2024, and what have they spent the most on?
+
+A. 2024 HON. ALEXANDER X. MOONEY $510,7457.92
+B.
+```{r}
+filtered_data <- us_rep_expense24 |>
+  filter(str_detect(ORGANIZATION, "HON"))
+```
+
+
+
+```{r}
+#4A
+US_congresspeeps_24 <- us_rep_expense24 |> filter(FISCAL.YEAR.OR.LEGISLATIVE.YEAR == "LY2024") |> 
+    filter(str_detect(ORGANIZATION, "HON"))
+
+US_congresspeeps_24 |> 
+  group_by(ORGANIZATION) |>
+  summarise(Total_Amount = sum(AMOUNT, na.rm = TRUE)) |>
+  arrange(desc(Total_Amount))
+```
+
+```{r}
+#4B
+Mooney24 <- us_rep_expense24 |>
+  filter(ORGANIZATION == "2024 HON. ALEXANDER X. MOONEY")
+
+Mooney24 |> 
+  group_by(DESCRIPTION) |>
+summarise(Total_Amount = sum(AMOUNT, na.rm = TRUE)) |>
+  arrange(desc(Total_Amount))
+
+
+
+```
+
+## Question 5: Who is the top recipient of government money?
+
+##The top recepient is the UNITED STATES POSTAL SERVICE, CITIBANK, and
+AMPLIFY INC. It's important to know that we have 1,061,174,000 that has
+no identifiable vendor, which is a worrying.
+
+
+```{r}
+###Q
+
+US_congresspeeps_24 |> 
+  group_by(VENDOR.NAME) |>
+  summarise(Total_Amount = sum(AMOUNT, na.rm = TRUE)) |>
+  arrange(desc(Total_Amount))
+
+```
+
+
