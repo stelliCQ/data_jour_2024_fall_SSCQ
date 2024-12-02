@@ -97,20 +97,59 @@ The way we can express it in this data is with the sum of “AMOUNT” grouped b
 Five: There wouldn’t be any issues for this question with the dataset. 
 All of the descriptions are listed and they are well documented.
 
-**DATA ANALYSIS 3**
+**DATA ANALYSIS 4**
 
-In this third deliverable, we decided to try to answer Q4 and Q5, 
+In this fourth deliverable, we decided clean our answers for Q3, Q4 and Q5, 
+
+Q3: Who is spending the most money on advertising?
+
+The person who spent the most on advertisements was Shri Thanedar of Michigan with
+$584,942.46. Next is Claudia Tenney of New York, and Carlos Gimenez of Florida.
+An important thing to note is that in Q5 about the companies/people who were 
+the vendors of the transactions SHRI THANEDAR	appeared with $344,313. 
+
+#This is questionable and worth investigating why this congressmen is also a vendor
+that's being given money as well.
+
+```{r}
+#Q3 Who is spending the most money on advertising?
+ 
+US_congresspeeps_24 |>
+  filter(DESCRIPTION == "ADVERTISEMENTS") |> 
+  group_by(ORGANIZATION) |>                
+  summarise(Total_Amount = sum(AMOUNT, na.rm = TRUE)) |> 
+  arrange(desc(Total_Amount))   
+
+```
+
 
 Question 4:  Who is the top spender based on the data available for 2024, and what have they spent the most on?
 
-A. 2024 HON. ALEXANDER X. MOONEY $510,7457.92
-B.
+#We filtered using string detect by legislative year, and "HON" to get the
+correct time frame and so it only shows the congressmen. This is part 4A.
+
+#For 4B, I filtered out using string detect the answers that were
+totals of the expenses, transfers, and outside as a way to clean up the answers.
+#We did this as a result of the blank answers from Q5 to make this much easier
+to read the data. We then grouped by and summarized by the Description of his reimbursements. 
+
+#I think the fact that he spent so much money on advertisements this year, which
+is an election year is interesting. Mooney is from West Virginia, and he was
+competing for the Senate seat of Manchin. He lost the primary to Justice. 
+
+#It would be an interesting story idea to compare Mooney's advertisement expenses
+before election year and now are different, and what are the ads he's pushing out.
+Since it's illegal to use this money to help reelection campaings the publicity
+of publishing what Mooney did in his term as representative could be a tactic for
+his primary race.
+
+A. 2024 HON. ALEXANDER X. MOONEY $510,7457.92. 
+B.Mooney spent $276,950.18 on advertisements, which is his largest expense. 
+
 ```{r}
 filtered_data <- us_rep_expense24 |>
   filter(str_detect(ORGANIZATION, "HON"))
 ```
-
-
 
 ```{r}
 #4A
@@ -131,7 +170,9 @@ Mooney24 <- us_rep_expense24 |>
 Mooney24 |> 
   group_by(DESCRIPTION) |>
 summarise(Total_Amount = sum(AMOUNT, na.rm = TRUE)) |>
-  arrange(desc(Total_Amount))
+  arrange(desc(Total_Amount)) |> filter(!str_detect(DESCRIPTION,"TOTALS")) |>
+  filter(!str_detect(DESCRIPTION,"(TRANSFER)")) |>
+   filter(!str_detect(DESCRIPTION,"(OUTSIDE)"))
 
 
 
@@ -140,18 +181,60 @@ summarise(Total_Amount = sum(AMOUNT, na.rm = TRUE)) |>
 ## Question 5: Who is the top recipient of government money?
 
 ##The top recepient is the UNITED STATES POSTAL SERVICE, CITIBANK, and
-AMPLIFY INC. It's important to know that we have 1,061,174,000 that has
+AMPLIFY INC. It's important to know that we have $1,061,174,000 that has
 no identifiable vendor, which is a worrying.
+
+##UPDATE: We were able to identify that the majority of the NAs were the total
+sum of the different values. 
+
+#Now that we created a new dataframe with all the identifiable vendors, we
+still see that the top recepeint is the U.S. Postal Service(1) and Citibank(2),LEIDOS DIGITAL SOLUTIONS INC(4) which isn't very interesting.
+
+#However, the interesting top vendors are Amplify Inc(3) and AEJ Group LLC (5), and
+The Franking Group (7). These three companies are related to media relations and
+advertising firms that are working with congressmen.
+
+#This is newsworthy since we see this pattern from Q4 and Q5 that advertising-related
+expenses are the most that are being reimbursed in this legislative year.
 
 
 ```{r}
-###Q
-
-US_congresspeeps_24 |> 
+valid_vendors |> 
   group_by(VENDOR.NAME) |>
+  summarise(Total_Amount = sum(AMOUNT, na.rm = TRUE)) |>
+    arrange(desc(Total_Amount))
+```
+
+**Code for Q5 to figure out what's wrong**
+
+```{r}
+#This is our way to identify what's going in one with the NA in Q5. 
+
+# Separate rows with missing or blank vendor names
+missing_vendors <- US_congresspeeps_24 |> 
+  filter(is.na(VENDOR.NAME) | str_trim(VENDOR.NAME) == "")
+
+# Examine rows with valid vendor names
+valid_vendors <- US_congresspeeps_24 |> 
+  filter(!is.na(VENDOR.NAME) & str_trim(VENDOR.NAME) != "")
+
+#There are more NA vendors that named vendors. --> with valid vendors having 136,086 obs.
+```
+
+```{r}
+
+missing_vendors |>
+  group_by(DESCRIPTION) |>
   summarise(Total_Amount = sum(AMOUNT, na.rm = TRUE)) |>
   arrange(desc(Total_Amount))
 
-```
+#OK! I(Stella) figured it out. The majority of the NAs are the totals
+#of the reimbursements that make up the entirety of page 1 of this. 
 
+#The other big group that gives us NAs are "transfers,"which I have no idea.
+
+#Maintenance/Repairs is another group which means that it was probably internal reimbursement within the House.
+
+#Lodging and meals are included in here, which is interesting; both are from John B. Larson.
+```
 
