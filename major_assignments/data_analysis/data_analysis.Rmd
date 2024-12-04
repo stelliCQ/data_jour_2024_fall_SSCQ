@@ -1,6 +1,6 @@
 ---
-itle: "Reverse Engineering Project"
-author: "Stella S. Canino, Wade DeVinney, and Miles Grovic"
+itle: "Data Analysis Project"
+author: "Stella S. Canino, Wade DeVinney, and Bao Bao"
 date: "October 20, 2024"
 output:
   html_document:
@@ -16,10 +16,6 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-
-```{r echo=FALSE, message=FALSE}
-
-```
 
 ```{r}
 # Turn off scientific notation
@@ -99,7 +95,58 @@ All of the descriptions are listed and they are well documented.
 
 **DATA ANALYSIS 4**
 
-In this fourth deliverable, we decided clean our answers for Q3, Q4 and Q5, 
+In this fourth deliverable, we decided clean our answers for Q2, Q3, Q4 and Q5, 
+
+#Note to Ryan. Hey, I hope your having a goot time in Japan. I just want to make a note
+that the deliverable for Monday, Dec 2 was all me. Yes, you heard it, all me.
+
+I communicated with my group Friday about meeting/calling and nobody responded.
+I'm nobody's mother so I'm not gonna be blowing up people's phone since this ain't
+middle school. I tried my best to answer the questions to the best of my 
+abilities and time since I had no power during the weekend (We love unstable
+electric infrastructure (this is a joke btw.)) 
+
+```{r}
+Q1 # Who increased their expenditures the most in the months leading up to the primary election?
+
+#- need to filter data. also what type of expenditure are we looking for??
+# - need to clarify since this is a lot of information.
+#- this will be done with my group
+
+US_congresspeeps_24 |>
+  group_by() |>
+  summarise()
+
+```
+
+
+
+
+Q2 Who is the top spender for traveling (airplanes, cars, etc)  in what is of  2024?
+
+The top spender for what is 2024 is HON. LANCE GOODEN of Texas, who started 
+his role in 2023 with $117,593.57. 
+
+As this is an election year, such high spending is noteworthy, raising questions
+about the use of public funds during a time of heightened political scrutiny.
+
+```{r}
+#Q2 Who is the top spender for traveling (airplanes, cars, etc)  in what is of  2024?
+
+filtered_data <- US_congresspeeps_24 |> 
+  filter(
+    SORT.SUBTOTAL.DESCRIPTION == "TRAVEL") 
+  
+filtered_data <- filtered_data |> 
+  filter(!DESCRIPTION %in% c("MEALS", "LODGING", "TRAVEL TOTALS:", "WI-FI ON TRAVEL"))
+
+filtered_data |>
+  group_by(ORGANIZATION) |>
+ summarise(Total_Amount = sum(AMOUNT, na.rm = TRUE)) |> 
+  arrange(desc(Total_Amount))   
+
+
+```
 
 Q3: Who is spending the most money on advertising?
 
@@ -145,11 +192,6 @@ his primary race.
 
 A. 2024 HON. ALEXANDER X. MOONEY $510,7457.92. 
 B.Mooney spent $276,950.18 on advertisements, which is his largest expense. 
-
-```{r}
-filtered_data <- us_rep_expense24 |>
-  filter(str_detect(ORGANIZATION, "HON"))
-```
 
 ```{r}
 #4A
