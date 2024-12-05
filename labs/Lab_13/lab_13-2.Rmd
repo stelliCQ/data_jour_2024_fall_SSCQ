@@ -1,0 +1,257 @@
+---
+title: "lab_13"
+author: "Stella Canino"
+date: "12/4/2024"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## You will need
+
+* Our usual libraries for working with data, plus rvest and possibly readxl for reading Excel files.
+
+## Load libraries and establish settings
+
+**Task** Create a codeblock and load appropriate packages and settings for this lab.
+
+```{r}
+# Turn off scientific notation
+options(scipen=999)
+
+library(readxl)
+library(tidyverse)
+library(janitor)
+library(rvest)
+library(lubridate)
+```
+
+## Getting the Data
+
+We're continuing our contrasting of the 2022 and 2018 elections, but this time we're switching to a different state: Utah. Utah had an unusual Senate election in 2022: Democrats did not nominate a candidate to run against incumbent Republican Mike Lee and instead endorsed an independent, Evan McMullin, in the race. Broadly, we want to dig into the differences between the 2022 Senate results and the 2018 Senate race, when Republican Mitt Romney defeated Democrat Jenny Wilson.
+
+Let's start with the 2022 results. You'll need to locate and scrape the 2022 county-level results for the U.S. Senate race from the Utah Elections site (https://electionresults.utah.gov/elections/). Utah has 29 counties, so if you don't have at least 29 rows in your dataframe, you've scraped the wrong page.
+
+**Task** Scrape the county-level results for the U.S. Senate race in 2022, which can be found at https://electionresults.utah.gov/elections/, into a dataframe. You will need to make sure that you have clean headers, which may involve renaming them, and you will need to remove the total row. Make sure that the columns containing votes are numeric.
+
+```{r}
+#I turned the link that was the PDF into tabula into a CSV File.
+
+senate_utah_22 <- read.csv("data/table-utah-senate22.csv")
+
+glimpse(senate_utah_22)
+```
+
+Next, we'll get the 2018 results. Unlike the 2022 results, these are stored in an Excel file located here: https://elections.utah.gov/Media/Default/2018%20Election/2018%20General%20Election%20Canvass.xlsx. You can choose how to get the U.S. Senate results - whether you download and save the file in this lab_13 folder (we did this in pre_lab_12) or whether you download it manually and create a CSV file from the Senate results sheet in this directory. Like the 2022 results, you'll want to make a dataframe with clean headers, no total row and numeric columns for the votes.
+
+**Task** Get the county-level results for the U.S. Senate race in 2018, which can be found at https://elections.utah.gov/Media/Default/2018%20Election/2018%20General%20Election%20Canvass.xlsx, and turn them into a dataframe. You will need to make sure that you have clean headers, which may involve renaming them, and you will need to remove the total row. Make sure that the columns containing votes are numeric.
+
+```{r}
+senate_utah_18 <- read.csv("data/senate_utah_18.csv")
+```
+
+Finally, join the two dataframes together:
+
+**Task** Join the 2022 and 2018 results into a single dataframe.
+
+```{r}
+utah_race_18and22 <- senate_utah_22 |> left_join(senate_utah_18) 
+
+glimpse(utah_race_18and22)
+colnames(utah_race_18and22)
+```
+
+```{r}
+# I renamed so its easier to study/code
+utah_race_18and22 <- utah_race_18and22 |>
+  rename(
+    Evan_McMullin_UNA = EVAN.MCMULLIN..UNA.,
+    James_Arthur_Hansen_LIB = JAMES.ARTHUR.HANSEN..LIB.,
+    Mike_Lee_REP = MIKE.LEE..REP.,
+    Tommy_Williams_IAP = TOMMY.WILLIAMS..IAP.,
+    Tim_Aalders_CON = Tim.Aalders..CON.,
+    Craig_R_Bowden_LIB = Craig.R..Bowden..LIB.,
+    Reed_C_McCandless_IAP = Reed.C..McCandless..IAP.,
+    Jenny_Wilson_DEM = Jenny.Wilson...DEM.,
+    Mitt_Romney_REP = Mitt.Romney..REP.,
+    Glade_G_Fitzgerald_Write_in = Glade.G.Fitzgerald..Write.in.,
+    Caleb_Dan_Reeve_Write_in = Caleb.Dan.Reeve..Write.in.,
+    Hektor_Reiksthegn_Write_in = Hektor.Reiksthegn..Write.in.,
+    Abe_Korb_Write_in = Abe.Korb...................Write.in.,
+    Ryan_Daniel_Jackson_Write_in = Ryan.Daniel.Jackson..Write.in.,
+    Cody_Judy_Write_in = Cody.Judy...Write.in.,
+    Tyrone_Jensen_Write_in = Tyrone.Jensen...Write.in.
+  )
+```
+
+
+```{r}
+colnames(utah_race_18and22)
+glimpse(utah_race_18and22)
+
+utah_race_18and22 <- utah_race_18and22 |>
+  filter(!if_all(everything(), ~ . == ""))
+
+nrow(utah_race_18and22)
+```
+
+```{r}
+utah_race_18and22 <- utah_race_18and22 %>%
+  mutate(
+    Jenny_Wilson_DEM = as.numeric(gsub(",", "", trimws(Jenny_Wilson_DEM))),
+    Tim_Aalders_CON = as.numeric(gsub(",", "", trimws(Tim_Aalders_CON))),
+    Craig_R_Bowden_LIB = as.numeric(gsub(",", "", trimws(Craig_R_Bowden_LIB))),
+    Mitt_Romney_REP = as.numeric(gsub(",", "", trimws(Mitt_Romney_REP))),
+    Reed_C_McCandless_IAP = as.numeric(gsub(",", "", trimws(Reed_C_McCandless_IAP)))
+  )
+```
+
+## Questions
+
+**Q1.** Calculate the difference in votes between Evan McMullin and Jenny Wilson and save it your combined dataframe. Write up some sentences that could go in a story describing where McMullin outperformed Wilson and where he didn't. Mention the margins and describe the counties you mention (location, population or another factor, such as 2020 presidential vote).
+
+**A1.** 
+
+In the 2022 race for Utah County, McMullin outperformed Wilson by 43,382. This
+county is the second-largest county with a population 719,174, and is majority
+Republican county. Although the Republican nominee won the county, McMullin lost
+by a much smaller margin than the Democratic nominee in 2018.
+
+McMullin's strong performance in Salt Lake County (31,639 votes ahead of Wilson)
+highlights his broad appeal. Salt Lake County,Utah’s urban and diverse population center, 
+often leans more Democratic, and has the largest population in the state by 1.8 million.
+
+The only county that voted more for Wilson was San Juan County by -281, and 
+is in southeastern part of Utah and have a population of 14,518. 
+
+```{r}
+utah_race_18and22 <- utah_race_18and22 |>
+  mutate(McMullin_Wilson = Evan_McMullin_UNA - Jenny_Wilson_DEM) 
+```
+
+```{r}
+utah_race_18and22 |>
+  group_by(County) |>
+  summarise(McMullin_Wilson)|>
+  arrange(desc(McMullin_Wilson))
+
+```
+
+**Q2** Calculate the difference in votes between Mike Lee and Mitt Romney and save it your combined dataframe. Write up some sentences that could go in a story describing where Romney outperformed Lee and where he didn't. Mention the margins and describe the counties you mention (location, population or another factor).
+
+**A2** 
+
+In Salt Lake County, the most populous region and an economic hub, Romney received 62,788 more votes than Lee. This county is a mix of urban and suburban communities, often plays a decisive role in statewide elections. Romney’s appeal to moderate and independent voters likely helped him secure a significantly higher vote count than Lee. 
+
+In Davis County, a suburban area north of Salt Lake City, Romney outpaced Lee by 20,455 votes. Known for its strong Republican majority and its commuter population that connects to the Salt Lake metro area, Davis County typically supports conservative candidates. 
+
+In Utah County, Romney outperformed Lee by 8,144 votes, which is the second-largest
+county in the state. This means that Lee was also favorable here given the narrower
+gap in the county.
+
+```{r}
+utah_race_18and22 <- utah_race_18and22 |>
+  mutate(Lee_Romney = Mitt_Romney_REP - Mike_Lee_REP)
+```
+
+```{r}
+utah_race_18and22 |>
+  group_by(County) |>
+  summarise(Lee_Romney)|>
+  arrange(desc(Lee_Romney))
+```
+
+
+**Q3** Sen. Ben Cardin, D-Maryland, has posted hundreds of press releases at https://www.cardin.senate.gov/?post_type=press-releases. It would be great to have all of them in a dataframe that has the following columns: date, title and url.
+
+To do this, you will need to scrape the page's html and save that to a variable, and separately use that variable to then extract the dates, titles and urls into separate dataframes using html_elements(). The function `html_text()` pulls out the contents of a tag, but for urls we want the HTML attribute. Rvest gives you a way to extract the URL from a link; google to find out what it is.
+
+At the end, you'll have three dataframes that you want to combine into a single dataframe. When we want to combine the rows of identical dataframes, we used `bind_rows()`. There's an alternative you can use to do the same for combining columns, and it works the same way.
+
+When you're done, rename the columns so they make sense, then make sure the date column is an actual date.
+
+Finally, tell me what questions you could ask of this data. Be creative.
+
+**A3** 
+
+We could see in his press releases how many bills that he sponsored and consponsored
+that passed the Senate. We could also find what are the top topics and policy 
+areas that Cardin had press releases about. It would be interesting to have
+the information in the columns be tied to when Congress was in session. 
+
+Furthermore, we could explore whether there are spikes in press releases during contentious votes, 
+major legislative achievements, or in response to national or state emergencies. 
+This analysis could reveal how Cardin prioritizes issues.
+
+```{r}
+cardin_url <- "https://www.cardin.senate.gov/?post_type=press-releases"
+```
+
+```{r}
+cardin_press <- cardin_url |>
+  read_html()
+
+# show the result
+cardin_press
+```
+
+```{r}
+
+press_release_title <- cardin_press |> 
+  html_nodes(xpath = "//h3[@class='customBlog_item__title']/a") |>
+  html_text()
+
+press_release_title <- tibble(Title = press_release_title)
+```
+
+```{r}
+press_release_dates <- cardin_press |>
+  html_elements(xpath = "//h5[@class='customBlog_item__date']") |>
+  html_text()
+
+press_release_dates <- tibble(Date = press_release_dates)
+
+press_release_dates
+
+```
+
+```{r}
+press_release_dates <- press_release_dates %>%
+  mutate(
+    Date = gsub(",", "", Date),  # Remove commas
+    Date = as.Date(Date, format = "%b %d %Y")  # Convert to Date type (e.g., Nov 11 2024)
+  )
+
+press_release_dates
+```
+
+```{r}
+#HERE FOR REFERENCE. THIS DIDN'T DO SO WELL. 
+dateee <- cardin_press |>
+  html_elements("h5")
+
+```
+
+```{r}
+press_release_urls <- cardin_press |>
+  html_elements(xpath = "//a[@class='customBlog_item__readMore']") |>
+  html_attr("href")
+
+# Convert to tibble so it's visible in the Global Environment
+press_release_urls <- tibble(URL = press_release_urls)
+```
+
+```{r}
+Cardin_Data <- bind_cols(press_release_title, press_release_urls, press_release_dates)
+```
+
+
+
+
+
+
+
+
+
