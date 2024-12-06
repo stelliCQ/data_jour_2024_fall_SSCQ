@@ -91,11 +91,13 @@ Where is that zip code and what kind of area is it, demographically? Which commi
 
 A2: 
 
+#WRONG --> 20815. It's looking for amount of people that contributed not the amount they donated. It's Chevy Chase Its Raskin the committee given to. I think it would be 3.
+
 The Zip code with the highest total amount of contributions is 20817. This is the zip code for Montgomery County, which is a very affluent area with a median household income of six figures, and is close to Washington, D.C. The largest recipient of is Helmer for Congress that's Virginia's 10th district. There are only two candidates out of the five of this zip code that are Md. candidates.
 
 ```{r}
 
-###This code cleans the zips
+###This code cleans the zips. 
 
 md_contribs <- md_contribs |>
   clean_names() |> 
@@ -131,7 +133,7 @@ md_contribs |>
 
 A3:
 
-The top two donors are Melanie Jacobsen and Mark P. Jacobsen, who are from Bethesda. Mark identifies with three different occupations that makes me question why he's registering himself that way.Another worry is that R put Mark Jacobsen and Drezner twice, skewing the results that make Mark first place as the largest donor by more than a million dollars in contributions.
+The top two donors are Melanie Jacobsen and Mark P. Jacobsen, who are from Bethesda. Mark identifies with three different occupations that makes me question why he's registering himself that way. Another worry is that R put Mark Jacobsen and Drezner twice, skewing the results that make Mark first place as the largest donor by more than a million dollars in contributions.
  
 
 For that reason, I'm unsure of the accuracy of these results. 

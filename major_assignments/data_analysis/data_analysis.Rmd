@@ -97,14 +97,6 @@ All of the descriptions are listed and they are well documented.
 
 In this fourth deliverable, we decided clean our answers for Q2, Q3, Q4 and Q5, 
 
-#Note to Ryan. Hey, I hope your having a goot time in Japan. I just want to make a note
-that the deliverable for Monday, Dec 2 was all me. Yes, you heard it, all me.
-
-I communicated with my group Friday about meeting/calling and nobody responded.
-I'm nobody's mother so I'm not gonna be blowing up people's phone since this ain't
-middle school. I tried my best to answer the questions to the best of my 
-abilities and time since I had no power during the weekend (We love unstable
-electric infrastructure (this is a joke btw.)) 
 
 ```{r}
 Q1 # Who increased their expenditures the most in the months leading up to the primary election?
