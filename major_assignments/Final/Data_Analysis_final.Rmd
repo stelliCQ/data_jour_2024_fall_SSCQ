@@ -1,0 +1,233 @@
+---
+title: "Data Analysis Project"
+author: "Stella S. Canino, Wade DeVinney, and Bao Bao"
+date: "October 20, 2024"
+output:
+  html_document:
+    theme: cerulean
+    highlight: pygments
+    toc: true
+    toc_float:
+      collapsed: true
+      smooth_scroll: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+# Turn off scientific notation
+options(scipen=999)
+#Turn on libraries
+library(tidyverse)
+library(janitor)
+library(lubridate)
+
+```
+
+*Cleaning and Preparation of Data*
+
+```{r}
+#This is the csv files of all the disbursements published in 2024.
+
+april_june24 <- read.csv("data/APRIL-JUNE-2024-SOD-DETAIL-GRID-FINAL.csv")
+
+jan_march24 <- read.csv("data/JAN-MAR-2024-SOD-DETAIL-GRID-FINAL.csv")
+
+# Clean required data and made turned this into a character or it wouldn't run.
+april_june24$BUDGET.OBJECT.CODE <- as.character(april_june24$BUDGET.OBJECT.CODE)
+jan_march24$BUDGET.OBJECT.CODE <- as.character(jan_march24$BUDGET.OBJECT.CODE)
+
+# Now bind the rows together
+us_rep_expense24 <- bind_rows(april_june24, jan_march24)
+
+glimpse(us_rep_expense24)
+
+```
+
+```{r}
+#Now, the next thing is to clean this further by format the dates from integers.
+us_rep_expense24 <- us_rep_expense24 |>
+  mutate(
+    PERFORM.START.DT = as.Date(PERFORM.START.DT, format = "%d-%b-%y"),
+    PERFORM.END.DT = as.Date(PERFORM.END.DT, format = "%d-%b-%y"),
+    TRANSACTION.DATE = as.Date(TRANSACTION.DATE, format = "%d-%b-%y")
+  )
+
+glimpse(us_rep_expense24)
+
+```
+
+```{r}
+#Now, we further this dataframe further to show only the congressmen 
+
+US_congresspeeps_24 <- us_rep_expense24 |> filter(FISCAL.YEAR.OR.LEGISLATIVE.YEAR == "LY2024") |> 
+    filter(str_detect(ORGANIZATION, "HON")) |> filter(!str_detect(DESCRIPTION,"TOTALS"))  
+
+glimpse(US_congresspeeps_24)
+```
+
+**Data Analysis Section**
+
+Q1: Who is the top spender based on the data available for 2024, and what have they spent the most on?
+
+As of July 2024, the top congressmen that used the disbursement program is 
+Alexander X. Mooney of West Virginia's 3rd district. Mooney spent a total of
+$1,276,864.48. He spent the most in advertising with $276,950.18. 
+
+We did a simple group_by and summarize by the total amount. To get an accurate
+total amount we first filtered out by "TOTALS", which skewed our results on the
+top of this code. Then we created a new dataframe to only observe Mooney. In the
+next question, we analyzed vendor names and had it initially show one billion with
+NAs. With further inspection, we saw that there was a Totals section and other 
+exchanges that increased the results.
+
+As a result we filtered by string detect (Outside) and (Transfer) as well.
+
+I believe it's newsworthy that he spent more than a quarter of his disbursements
+on advertising, since this is an election year. For context, Mooney was running
+for the Republican primary of West Virginia to fill the vacancy of Sen. Joe
+Manchin, and he lost the primary to Gov. Justice. 
+
+#It is illegal to use disbursements for the reelection campaigns of congresspeople.
+ What if the advertisements are notes from the office on all the victories and 
+bills he formed part of as a way to inform his constituents? Framed in that way,
+a representative could indirectly use this program as a way to aid his campaign
+for the primary race.
+
+```{r}
+#1A
+US_congresspeeps_24 |> 
+  group_by(ORGANIZATION) |>
+  summarise(Total_Amount = sum(AMOUNT, na.rm = TRUE)) |>
+  arrange(desc(Total_Amount)) 
+```
+
+```{r}
+#1b
+Mooney24 <- US_congresspeeps_24 |>
+  filter(ORGANIZATION == "2024 HON. ALEXANDER X. MOONEY")
+
+Mooney24 |>
+group_by(DESCRIPTION) |>
+summarise(Total_Amount = sum(AMOUNT, na.rm = TRUE)) |>
+  arrange(desc(Total_Amount)) |> filter(!str_detect(DESCRIPTION,"TOTALS")) |>
+  filter(!str_detect(DESCRIPTION,"(TRANSFER)")) |>
+   filter(!str_detect(DESCRIPTION,"(OUTSIDE)"))
+```
+
+Q2: Who is the top recipient of government money?
+
+As explained above, we had a lot of NAs when investigating the top recipient who is
+paid by congressmen. We made to separate dataframes to investigate this further. 
+Since we separated this, we were able to investigate the named recipients easier.
+
+We found that the top recipient is the U.S. Postal Service(1) and Citibank(2),
+LEIDOS DIGITAL SOLUTIONS INC(4) which isn't very interesting.
+However, the interesting top vendors are Amplify Inc(3) and AEJ Group LLC (5), and
+The Franking Group (7). These three companies are related to media relations and
+advertising firms that are working with congresspeople
+
+This is newsworthy since we see this pattern from Q1 advertising-related
+expenses are the most that are being reimbursed in this legislative year. This 
+is important because it could highlight how congresspeople are using 
+their media and advertising disbursements to reach voters and change public opinion
+before their primary or general election.
+
+```{r}
+# Separate rows with missing or blank vendor names
+missing_vendors <- US_congresspeeps_24 |> 
+  filter(is.na(VENDOR.NAME) | str_trim(VENDOR.NAME) == "")
+
+# Examine rows with valid vendor names
+valid_vendors <- US_congresspeeps_24 |> 
+  filter(!is.na(VENDOR.NAME) & str_trim(VENDOR.NAME) != "")
+
+#There are more NA vendors that named vendors. --> with valid vendors having 136,086 obs.
+```
+
+```{r}
+valid_vendors |> 
+  group_by(VENDOR.NAME) |>
+  summarise(Total_Amount = sum(AMOUNT, na.rm = TRUE)) |>
+    arrange(desc(Total_Amount))
+```
+
+Q3: Who is spending the most money on advertising?
+
+The congressmen who spent the most money on advertising is Hon. Shri Thanedar
+of Michigan's 13th district with $584,942.46. 
+
+It's newsworthy to Thanedar had one of the most competitive primaries in his state
+going against two nominees, and he won it by 54%. We could also try to observe
+how has the advertising expense of Thanedar changed compared to last year 
+and during the months leading up to the primary(August), and general election (November).
+
+Another thing worth investigating is why Thanedar also appeared as a vendor
+that's being given money as well. 
+
+```{r}
+US_congresspeeps_24 |>
+  filter(DESCRIPTION == "ADVERTISEMENTS") |> 
+  group_by(ORGANIZATION) |>                
+  summarise(Total_Amount = sum(AMOUNT, na.rm = TRUE)) |> 
+  arrange(desc(Total_Amount))   
+```
+
+Q4:Who is the top spender for traveling (airplanes, cars, etc) of 2024 available data?
+
+The top spender for traveling disbursements is Hon. Lance Gooden of Texas's
+5th district with $143,418.52. As this is an election year, such high spending
+is noteworthy if that amount of travel is related to campaigning for himself or 
+others for the primary or general election. 
+
+```{r}
+#Q2 Who is the top spender for traveling (airplanes, cars, etc)  in what is of  2024?
+
+filtered_data <- US_congresspeeps_24 |> 
+  filter(
+    SORT.SUBTOTAL.DESCRIPTION == "TRAVEL") 
+  
+filtered_data <- filtered_data |> 
+  filter(!DESCRIPTION %in% c("MEALS", "LODGING", "TRAVEL TOTALS:", "WI-FI ON TRAVEL"))
+
+filtered_data |>
+  group_by(ORGANIZATION) |>
+ summarise(Total_Amount = sum(AMOUNT, na.rm = TRUE)) |> 
+  arrange(desc(Total_Amount))   
+
+
+```
+
+ Q5 Which congressmen spent the most on advertising on the data available of 2024 by month?
+
+The congressmen who spent the most on advertising by month is Shri Thanedar in
+July with a total of $440,728.26. It's important to note that the primary he 
+was facing was in August 5th, which makes this amount in June the majority
+of his total advertising expense that's reported. We would have to see what
+this increase holds when the July-September data roles around. 
+
+Another important thing to note that the second person that spent the most on
+advertising in 2024 was Claudia Tenney of New York who faced a very contentious
+primary and comes from a district that has flipped a lot. Her largest expense was
+in May 2025 with $210,102. The primary race was in June, meaning that this 
+expense was one month before her election.
+
+This is newsworthy since we see a pattern of the advertising expenses
+increasing near the months of the congressmen primaries. A further investigation
+could reveal more patterns of this use of reimbursements to help camgaigns.
+
+```{r}
+US_congresspeeps_24 |>
+  filter(DESCRIPTION == "ADVERTISEMENTS") |> 
+  mutate(Month = format(as.Date(TRANSACTION.DATE), "%Y-%m")) |> # Extract year-month from the date
+  group_by(ORGANIZATION, Month) |>                
+  summarise(Total_Amount = sum(AMOUNT, na.rm = TRUE)) |> 
+  arrange(desc(Total_Amount))
+
+```
+
+
+
